@@ -1,18 +1,35 @@
 # CPACodexKeeper
 
-CPACodexKeeper is a Python tool for **inspecting and maintaining `type=codex` tokens stored in a CPA management system**.
+CPACodexKeeper is a Python tool for **inspecting and maintaining codex tokens stored in a CPA management system**.
 
-It does not create tokens. Instead, it continuously maintains **existing codex tokens already stored in a CPA management API**, including tasks such as:
+It does not create tokens. Instead, it continuously maintains **existing codex tokens already stored in a CPA management API**.
 
-- filtering `type=codex` tokens
-- downloading token details
-- checking token validity through the OpenAI usage endpoint
-- deciding when to disable or re-enable tokens based on quota
-- refreshing tokens that are close to expiry
-- writing refreshed token payloads back to CPA
-- running once or continuously in daemon mode
+## Core capabilities
 
-If you already have a CPA-style token management API and want to automatically clean invalid tokens, control quota usage, and refresh expiring tokens, this project is built for that workflow.
+- check whether a token is still valid
+- disable or re-enable tokens based on weekly or primary quota
+- refresh tokens that are close to expiry
+- support `.env` configuration, Docker, and GitHub Actions CI
+
+## Who this is for
+
+If you already have a CPA-style token management API and want to:
+
+- clean invalid tokens automatically
+- control token usage quota
+- re-enable tokens when quota recovers
+- refresh tokens before expiry
+
+then this project is built for that workflow.
+
+## Quick start
+
+```bash
+cp .env.example .env
+python main.py --once
+```
+
+See the sections below for full configuration and runtime details.
 
 ---
 

@@ -2,16 +2,34 @@
 
 CPACodexKeeper 是一个用于**巡检和维护 CPA 管理端中的 codex token** 的 Python 工具。
 
-它的目标不是生成 token，而是对**已经存储在 CPA 管理 API 中的 codex token** 做持续维护，例如：
+它的目标不是生成 token，而是对**已经存储在 CPA 管理 API 中的 codex token** 做持续维护。
 
-- 过滤出 codex 的 token
-- 拉取每个 token 的详情
-- 调用 OpenAI usage 接口检查 token 是否仍然可用
-- 根据限额自动决定是否禁用 / 启用
-- 对接近过期的 token 自动刷新并回写到 CPA
-- 在单次执行或守护模式下持续完成以上流程
+## 核心能力
 
-如果你手里已经有一个用于统一存储 token 的 CPA 管理接口，希望定期清理失效 token、控制额度占用、自动刷新快过期 token，这个项目就是为这个场景准备的。
+- 检查 token 是否失效
+- 按周限额 / 主限额自动禁用或启用
+- 自动刷新即将过期的 token
+- 支持 `.env` 配置、Docker 和 GitHub Actions CI
+
+## 适合谁用
+
+如果你已经有一个 CPA 管理 API，并且希望：
+
+- 定期清理失效 token
+- 控制 token 的 usage 配额占用
+- 在额度恢复后自动启用 token
+- 在过期前自动刷新 token
+
+那么这个项目就是为这个场景准备的。
+
+## 快速开始
+
+```bash
+cp .env.example .env
+python main.py --once
+```
+
+更多配置和运行方式见下文。
 
 ---
 
