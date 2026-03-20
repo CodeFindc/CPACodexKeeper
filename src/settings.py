@@ -9,6 +9,7 @@ DEFAULT_EXPIRY_THRESHOLD_DAYS = 3
 DEFAULT_USAGE_TIMEOUT_SECONDS = 15
 DEFAULT_CPA_TIMEOUT_SECONDS = 30
 DEFAULT_MAX_RETRIES = 2
+DEFAULT_WORKER_THREADS = 8
 PROJECT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
@@ -27,6 +28,7 @@ class Settings:
     usage_timeout_seconds: int = DEFAULT_USAGE_TIMEOUT_SECONDS
     cpa_timeout_seconds: int = DEFAULT_CPA_TIMEOUT_SECONDS
     max_retries: int = DEFAULT_MAX_RETRIES
+    worker_threads: int = DEFAULT_WORKER_THREADS
 
 
 def _read_project_env_file(env_file: Path | None = None) -> dict[str, str]:
@@ -95,4 +97,5 @@ def load_settings(env_file: Path | None = None) -> Settings:
         usage_timeout_seconds=_read_int("CPA_USAGE_TIMEOUT", DEFAULT_USAGE_TIMEOUT_SECONDS, env_values, minimum=1),
         cpa_timeout_seconds=_read_int("CPA_HTTP_TIMEOUT", DEFAULT_CPA_TIMEOUT_SECONDS, env_values, minimum=1),
         max_retries=_read_int("CPA_MAX_RETRIES", DEFAULT_MAX_RETRIES, env_values, minimum=0, maximum=5),
+        worker_threads=_read_int("CPA_WORKER_THREADS", DEFAULT_WORKER_THREADS, env_values, minimum=1),
     )

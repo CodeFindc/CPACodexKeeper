@@ -68,7 +68,7 @@ Each inspection round follows this sequence:
 9. refresh the token if it is close to expiry
 10. upload the refreshed token payload back to CPA
 
-This process is **serial, not concurrent**. One full round completes before the next round starts.
+This process is **round-based with intra-round concurrency**. One full round still completes before the next round starts, but multiple tokens can be inspected concurrently within the same round.
 
 ---
 
@@ -135,6 +135,7 @@ Then edit `.env`.
 - `CPA_HTTP_TIMEOUT`: timeout for CPA API requests, default `30`
 - `CPA_USAGE_TIMEOUT`: timeout for OpenAI usage requests, default `15`
 - `CPA_MAX_RETRIES`: retry count for transient network / 5xx failures, default `2`
+- `CPA_WORKER_THREADS`: number of worker threads per inspection round, default `8`
 
 The `.env.example` file already includes bilingual comments for direct editing.
 
@@ -220,6 +221,9 @@ docker compose up -d --build
 ## 7. Output behavior
 
 For each token, the tool logs details such as:
+
+- multiple tokens may be inspected concurrently within a round
+- each token log is buffered and emitted as one block so console output does not interleave across threads
 
 - token name
 - email

@@ -1,8 +1,9 @@
 import pathlib
 import sys
 import unittest
+from concurrent.futures import Future
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -116,7 +117,10 @@ class MaintainerTests(unittest.TestCase):
         self.maintainer.set_disabled_status = Mock(return_value=True)
         result = self.maintainer.process_token({"name": "t2"}, 1, 1)
         self.assertEqual(result, "alive")
-        self.maintainer.set_disabled_status.assert_called_once_with("t2", disabled=True)
+        self.maintainer.set_disabled_status.assert_called_once()
+        args, kwargs = self.maintainer.set_disabled_status.call_args
+        self.assertEqual(args, ("t2",))
+        self.assertEqual(kwargs["disabled"], True)
         self.assertEqual(self.maintainer.stats.disabled, 1)
 
     def test_process_token_enables_when_disabled_and_weekly_quota_below_threshold(self):
@@ -140,7 +144,10 @@ class MaintainerTests(unittest.TestCase):
         self.maintainer.set_disabled_status = Mock(return_value=True)
         result = self.maintainer.process_token({"name": "t3"}, 1, 1)
         self.assertEqual(result, "alive")
-        self.maintainer.set_disabled_status.assert_called_once_with("t3", disabled=False)
+        self.maintainer.set_disabled_status.assert_called_once()
+        args, kwargs = self.maintainer.set_disabled_status.call_args
+        self.assertEqual(args, ("t3",))
+        self.assertEqual(kwargs["disabled"], False)
         self.assertEqual(self.maintainer.stats.enabled, 1)
 
     def test_process_token_refreshes_when_near_expiry(self):
@@ -173,3 +180,127 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(result, "alive")
         self.maintainer.upload_updated_token.assert_called_once()
         self.assertEqual(self.maintainer.stats.refreshed, 1)
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_uses_configured_worker_threads_and_processes_all_tokens(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "t1"}, {"name": "t2"}, {"name": "t3"}]
+        self.maintainer.settings.worker_threads = 6
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+
+        futures = []
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            future.set_result(fn(token_info, idx, total))
+            futures.append(future)
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+        self.maintainer.process_token = Mock(side_effect=["alive", "alive", "alive"])
+
+        self.maintainer.run()
+
+        executor_cls.assert_called_once_with(max_workers=6)
+        self.assertEqual(executor.submit.call_count, 3)
+        self.maintainer.process_token.assert_any_call({"name": "t1"}, 1, 3)
+        self.maintainer.process_token.assert_any_call({"name": "t2"}, 2, 3)
+        self.maintainer.process_token.assert_any_call({"name": "t3"}, 3, 3)
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_logs_task_exception_and_continues(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "ok-1"}, {"name": "boom"}, {"name": "ok-2"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.log = Mock()
+
+        futures = []
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            try:
+                future.set_result(fn(token_info, idx, total))
+            except Exception as exc:
+                future.set_exception(exc)
+            futures.append(future)
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            if token_info["name"] == "boom":
+                raise RuntimeError("unexpected boom")
+            self.maintainer.stats.alive += 1
+            return "alive"
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run()
+
+        self.assertEqual(self.maintainer.process_token.call_count, 3)
+        self.assertEqual(self.maintainer.stats.alive, 2)
+        self.maintainer.log.assert_any_call("ERROR", "Token 任务异常 (boom): unexpected boom", indent=1)
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_preserves_total_stat_with_threaded_execution(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "t1"}, {"name": "t2"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            future.set_result(fn(token_info, idx, total))
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            if token_info["name"] == "t1":
+                self.maintainer.stats.alive += 1
+            else:
+                self.maintainer.stats.skipped += 1
+            return token_info["name"]
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run()
+
+        self.assertEqual(self.maintainer.stats.total, 2)
+        self.assertEqual(self.maintainer.stats.alive, 1)
+        self.assertEqual(self.maintainer.stats.skipped, 1)
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_logs_configured_worker_threads(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "t1"}]
+        self.maintainer.settings.worker_threads = 5
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.log = Mock()
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            future.set_result(fn(token_info, idx, total))
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+        self.maintainer.process_token = Mock(return_value="alive")
+
+        self.maintainer.run()
+
+        self.maintainer.log.assert_any_call("INFO", "线程数: 5")
