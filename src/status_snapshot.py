@@ -1,3 +1,4 @@
+import html
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -55,6 +56,14 @@ class ResolvedStatus:
     code: str | None = None
     message: str | None = None
 
+    def http_status(self) -> int:
+        if self.state == STATE_SNAPSHOT_ERROR:
+            return 503
+        return 200
+
+    def to_dict(self) -> dict[str, object | None]:
+        return asdict(self)
+
 
 class SnapshotValidationError(ValueError):
     pass
@@ -83,6 +92,49 @@ def parse_iso8601(value: str, field_name: str = "timestamp") -> datetime:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
+
+
+def render_status_html(resolved: ResolvedStatus) -> str:
+    rows = [
+        ("state", resolved.state),
+        ("mode", resolved.mode),
+        ("result", resolved.result),
+        ("started_at", resolved.started_at),
+        ("finished_at", resolved.finished_at),
+        ("updated_at", resolved.updated_at),
+        ("interval_seconds", resolved.interval_seconds),
+        ("code", resolved.code),
+        ("message", resolved.message),
+    ]
+    if resolved.summary is not None:
+        rows.extend((f"summary.{key}", value) for key, value in resolved.summary.items())
+
+    rendered_rows = "\n".join(
+        "        <tr><th>{label}</th><td>{value}</td></tr>".format(
+            label=html.escape(str(label)),
+            value=html.escape("" if value is None else str(value)),
+        )
+        for label, value in rows
+    )
+    title = html.escape(f"CPACodexKeeper status: {resolved.state}")
+    return (
+        "<!doctype html>\n"
+        "<html lang=\"en\">\n"
+        "  <head>\n"
+        "    <meta charset=\"utf-8\">\n"
+        f"    <title>{title}</title>\n"
+        "    <style>body { font-family: sans-serif; margin: 2rem; } "
+        "table { border-collapse: collapse; } th, td { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; } "
+        "th { background: #f5f5f5; }</style>\n"
+        "  </head>\n"
+        "  <body>\n"
+        f"    <h1>{title}</h1>\n"
+        "    <table>\n"
+        f"{rendered_rows}\n"
+        "    </table>\n"
+        "  </body>\n"
+        "</html>\n"
+    )
 
 
 class SnapshotWriter:

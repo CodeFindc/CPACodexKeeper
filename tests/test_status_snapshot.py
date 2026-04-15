@@ -23,6 +23,7 @@ from status_snapshot import (
     SnapshotPayload,
     SnapshotStore,
     SnapshotWriter,
+    render_status_html,
     to_iso8601,
 )
 
@@ -138,6 +139,7 @@ class StatusSnapshotTests(unittest.TestCase):
         self.assertEqual(resolved.state, STATE_SNAPSHOT_ERROR)
         self.assertEqual(resolved.code, ERROR_INVALID_SNAPSHOT)
         self.assertIn("invalid JSON", resolved.message)
+        self.assertEqual(resolved.http_status(), 503)
 
     def test_resolve_missing_summary_network_error_returns_snapshot_error(self):
         payload = {
@@ -164,6 +166,73 @@ class StatusSnapshotTests(unittest.TestCase):
         self.assertEqual(resolved.state, STATE_SNAPSHOT_ERROR)
         self.assertEqual(resolved.code, ERROR_INVALID_SNAPSHOT)
         self.assertIn("missing required field: summary.network_error", resolved.message)
+
+    def test_resolved_status_defaults_to_http_200(self):
+        self.store.write_snapshot(
+            SnapshotPayload(
+                mode=MODE_ONCE,
+                result=RESULT_SUCCESS,
+                started_at=to_iso8601(self.now - timedelta(seconds=10)),
+                finished_at=to_iso8601(self.now - timedelta(seconds=5)),
+                updated_at=to_iso8601(self.now),
+                interval_seconds=300,
+                summary={
+                    "total": 1,
+                    "alive": 1,
+                    "dead": 0,
+                    "disabled": 0,
+                    "enabled": 0,
+                    "refreshed": 0,
+                    "skipped": 0,
+                    "network_error": 0,
+                },
+            )
+        )
+
+        resolved = self.store.resolve(now=self.now)
+
+        self.assertEqual(resolved.http_status(), 200)
+
+    def test_render_status_html_uses_resolved_snapshot_fields(self):
+        self.store.write_snapshot(
+            SnapshotPayload(
+                mode=MODE_DAEMON,
+                result=RESULT_PARTIAL,
+                started_at=to_iso8601(self.now - timedelta(seconds=20)),
+                finished_at=to_iso8601(self.now - timedelta(seconds=10)),
+                updated_at=to_iso8601(self.now),
+                interval_seconds=300,
+                summary={
+                    "total": 2,
+                    "alive": 1,
+                    "dead": 1,
+                    "disabled": 0,
+                    "enabled": 0,
+                    "refreshed": 0,
+                    "skipped": 0,
+                    "network_error": 1,
+                },
+            )
+        )
+
+        resolved = self.store.resolve(now=self.now)
+        html = render_status_html(resolved)
+
+        self.assertIn("<!doctype html>", html.lower())
+        self.assertIn("daemon-active", html)
+        self.assertIn("partial", html)
+        self.assertIn("network_error", html)
+        self.assertIn("2026-04-14T12:00:00Z", html)
+
+    def test_render_status_html_renders_snapshot_error_message(self):
+        self.snapshot_path.write_text("{not-json", encoding="utf-8")
+
+        resolved = self.store.resolve(now=self.now)
+        html = render_status_html(resolved)
+
+        self.assertIn("snapshot-error", html)
+        self.assertIn("invalid_snapshot", html)
+        self.assertIn("invalid JSON", html)
 
     def test_write_snapshot_persists_raw_json(self):
         snapshot = SnapshotPayload(
