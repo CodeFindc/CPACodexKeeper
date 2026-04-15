@@ -213,8 +213,10 @@ class SnapshotStore:
         now: datetime,
         updated_at: datetime,
     ) -> str:
-        if snapshot.mode == MODE_ONCE:
+        if snapshot.mode == MODE_ONCE and snapshot.finished_at is not None:
             return STATE_ONCE_COMPLETE
+        if snapshot.mode == MODE_ONCE and snapshot.finished_at is None:
+            return STATE_DAEMON_ACTIVE
         if (now - updated_at).total_seconds() > snapshot.interval_seconds * 2:
             return STATE_STALE
         return STATE_DAEMON_ACTIVE

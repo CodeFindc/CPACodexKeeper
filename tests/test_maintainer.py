@@ -503,6 +503,43 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(finished_args[2], RESULT_PARTIAL)
         self.assertEqual(finished_args[3]["network_error"], 1)
 
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_writes_partial_snapshot_when_worker_future_raises(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "ok"}, {"name": "boom"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            try:
+                future.set_result(fn(token_info, idx, total))
+            except Exception as exc:
+                future.set_exception(exc)
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            if token_info["name"] == "boom":
+                raise RuntimeError("unexpected boom")
+            self.maintainer.stats.alive += 1
+            return "alive"
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run(mode="once")
+
+        finished_args = self.maintainer.snapshot_writer.write_finished.call_args.args
+        self.assertEqual(finished_args[0], "once")
+        self.assertEqual(finished_args[2], RESULT_PARTIAL)
+        self.assertEqual(finished_args[3]["alive"], 1)
+
     def test_run_writes_failure_snapshot_when_listing_tokens_raises(self):
         self.maintainer.log_startup = Mock()
         self.maintainer.snapshot_writer = Mock()

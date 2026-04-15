@@ -351,6 +351,7 @@ class CPACodexKeeper:
         self.reset_stats()
         started_at = self.snapshot_writer.write_started(mode, self.settings.interval_seconds)
         result = RESULT_SUCCESS
+        had_worker_exception = False
         try:
             self.log_startup()
             tokens = self.get_token_list()
@@ -376,6 +377,7 @@ class CPACodexKeeper:
                     try:
                         future.result()
                     except Exception as exc:
+                        had_worker_exception = True
                         token_name = future_map[future].get("name", "unknown")
                         self.log("ERROR", f"Token 任务异常 ({token_name}): {exc}", indent=1)
                         self.blank_line()
@@ -395,7 +397,7 @@ class CPACodexKeeper:
             self.log("INFO", f"- 跳过: {stats['skipped']}", indent=1)
             self.log("INFO", f"- 网络失败: {stats['network_error']}", indent=1)
             self.logger.divider()
-            result = self._derive_snapshot_result(stats)
+            result = self._derive_snapshot_result(stats, had_worker_exception=had_worker_exception)
         except Exception:
             result = RESULT_FAILURE
             raise
@@ -408,8 +410,8 @@ class CPACodexKeeper:
                 started_at,
             )
 
-    def _derive_snapshot_result(self, stats):
-        if stats["network_error"] > 0:
+    def _derive_snapshot_result(self, stats, *, had_worker_exception=False):
+        if had_worker_exception or stats["network_error"] > 0:
             return RESULT_PARTIAL
         return RESULT_SUCCESS
 
