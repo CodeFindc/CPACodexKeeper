@@ -8,11 +8,12 @@ from .logging_utils import ConsoleLogger, TokenLogger
 from .models import MaintainerStats
 from .openai_client import OpenAIClient, parse_usage_info
 from .settings import Settings
+from .status_snapshot import MODE_DAEMON, MODE_ONCE, RESULT_FAILURE, RESULT_PARTIAL, RESULT_SUCCESS, SnapshotWriter
 from .utils import format_seconds, get_expired_remaining, get_expired_remaining_with_status
 
 
 class CPACodexKeeper:
-    def __init__(self, settings: Settings, dry_run: bool = False):
+    def __init__(self, settings: Settings, dry_run: bool = False, snapshot_writer: SnapshotWriter | None = None):
         self.settings = settings
         self.dry_run = dry_run
         self.logger = ConsoleLogger()
@@ -30,6 +31,7 @@ class CPACodexKeeper:
         )
         self.stats = MaintainerStats()
         self._stats_lock = threading.Lock()
+        self.snapshot_writer = snapshot_writer or SnapshotWriter(settings.status_snapshot_path)
 
     def reset_stats(self):
         with self._stats_lock:
@@ -345,51 +347,72 @@ class CPACodexKeeper:
             self.log("DRY", "演练模式 (不实际修改)")
         self.logger.divider()
 
-    def run(self):
+    def run(self, mode=MODE_ONCE):
         self.reset_stats()
-        self.log_startup()
-        tokens = self.get_token_list()
-        if not tokens:
-            self.log("WARN", "未获取到任何 codex Token")
-            return
+        started_at = self.snapshot_writer.write_started(mode, self.settings.interval_seconds)
+        finished_written = False
+        try:
+            self.log_startup()
+            tokens = self.get_token_list()
+            if not tokens:
+                self.log("WARN", "未获取到任何 codex Token")
+                return
 
-        self._set_total(len(tokens))
-        random.shuffle(tokens)
-        start_time = time.time()
-        total = len(tokens)
-        self.log("INFO", f"共计: {total} 个 codex Token")
-        self.log("INFO", f"线程数: {self.settings.worker_threads}")
-        self.blank_line()
+            self._set_total(len(tokens))
+            random.shuffle(tokens)
+            start_time = time.time()
+            total = len(tokens)
+            self.log("INFO", f"共计: {total} 个 codex Token")
+            self.log("INFO", f"线程数: {self.settings.worker_threads}")
+            self.blank_line()
 
-        future_map = {}
-        with ThreadPoolExecutor(max_workers=self.settings.worker_threads) as executor:
-            for idx, token_info in enumerate(tokens, 1):
-                future = executor.submit(self.process_token, token_info, idx, total)
-                future_map[future] = token_info
+            future_map = {}
+            with ThreadPoolExecutor(max_workers=self.settings.worker_threads) as executor:
+                for idx, token_info in enumerate(tokens, 1):
+                    future = executor.submit(self.process_token, token_info, idx, total)
+                    future_map[future] = token_info
 
-            for future in as_completed(future_map):
-                try:
-                    future.result()
-                except Exception as exc:
-                    token_name = future_map[future].get("name", "unknown")
-                    self.log("ERROR", f"Token 任务异常 ({token_name}): {exc}", indent=1)
-                    self.blank_line()
+                for future in as_completed(future_map):
+                    try:
+                        future.result()
+                    except Exception as exc:
+                        token_name = future_map[future].get("name", "unknown")
+                        self.log("ERROR", f"Token 任务异常 ({token_name}): {exc}", indent=1)
+                        self.blank_line()
 
-        elapsed = time.time() - start_time
-        stats = self._stats_snapshot()
-        self.logger.divider()
-        self.log("INFO", "执行完成")
-        self.log("INFO", f"耗时: {elapsed:.1f} 秒")
-        self.log("INFO", "统计:")
-        self.log("INFO", f"- 总计: {stats['total']}", indent=1)
-        self.log("INFO", f"- 存活: {stats['alive']}", indent=1)
-        self.log("INFO", f"- 死号(已删除): {stats['dead']}", indent=1)
-        self.log("INFO", f"- 已禁用: {stats['disabled']}", indent=1)
-        self.log("INFO", f"- 已启用: {stats['enabled']}", indent=1)
-        self.log("INFO", f"- 已刷新: {stats['refreshed']}", indent=1)
-        self.log("INFO", f"- 跳过: {stats['skipped']}", indent=1)
-        self.log("INFO", f"- 网络失败: {stats['network_error']}", indent=1)
-        self.logger.divider()
+            elapsed = time.time() - start_time
+            stats = self._stats_snapshot()
+            self.logger.divider()
+            self.log("INFO", "执行完成")
+            self.log("INFO", f"耗时: {elapsed:.1f} 秒")
+            self.log("INFO", "统计:")
+            self.log("INFO", f"- 总计: {stats['total']}", indent=1)
+            self.log("INFO", f"- 存活: {stats['alive']}", indent=1)
+            self.log("INFO", f"- 死号(已删除): {stats['dead']}", indent=1)
+            self.log("INFO", f"- 已禁用: {stats['disabled']}", indent=1)
+            self.log("INFO", f"- 已启用: {stats['enabled']}", indent=1)
+            self.log("INFO", f"- 已刷新: {stats['refreshed']}", indent=1)
+            self.log("INFO", f"- 跳过: {stats['skipped']}", indent=1)
+            self.log("INFO", f"- 网络失败: {stats['network_error']}", indent=1)
+            self.logger.divider()
+            result = self._derive_snapshot_result(stats)
+            self.snapshot_writer.write_finished(mode, self.settings.interval_seconds, result, stats, started_at)
+            finished_written = True
+        except Exception:
+            if not finished_written:
+                self.snapshot_writer.write_finished(
+                    mode,
+                    self.settings.interval_seconds,
+                    RESULT_FAILURE,
+                    self._stats_snapshot(),
+                    started_at,
+                )
+            raise
+
+    def _derive_snapshot_result(self, stats):
+        if stats["network_error"] > 0:
+            return RESULT_PARTIAL
+        return RESULT_SUCCESS
 
     def run_forever(self, interval_seconds=1800):
         round_no = 0
@@ -398,7 +421,7 @@ class CPACodexKeeper:
             round_no += 1
             self.log("INFO", f"开始第 {round_no} 轮巡检")
             try:
-                self.run()
+                self.run(mode=MODE_DAEMON)
                 self.log("INFO", f"第 {round_no} 轮巡检结束")
             except KeyboardInterrupt:
                 raise

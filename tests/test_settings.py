@@ -44,6 +44,25 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.cpa_token, "shell-secret")
         self.assertEqual(settings.worker_threads, 12)
 
+    def test_load_settings_reads_status_snapshot_server_values(self):
+        env_file = Path("does-not-exist.env")
+        with patch.dict(
+            os.environ,
+            {
+                "CPA_ENDPOINT": "https://example.com",
+                "CPA_TOKEN": "secret",
+                "CPA_STATUS_SNAPSHOT": "/tmp/status.json",
+                "CPA_STATUS_HOST": "0.0.0.0",
+                "CPA_STATUS_PORT": "9090",
+            },
+            clear=True,
+        ):
+            settings = load_settings(env_file=env_file)
+
+        self.assertEqual(settings.status_snapshot_path, Path("/tmp/status.json"))
+        self.assertEqual(settings.status_host, "0.0.0.0")
+        self.assertEqual(settings.status_port, 9090)
+
     def test_load_settings_rejects_missing_endpoint(self):
         env_file = Path("does-not-exist.env")
         with patch.dict(os.environ, {"CPA_TOKEN": "secret"}, clear=True):
@@ -65,5 +84,19 @@ class SettingsTests(unittest.TestCase):
     def test_load_settings_rejects_zero_worker_threads(self):
         env_file = Path("does-not-exist.env")
         with patch.dict(os.environ, {"CPA_ENDPOINT": "https://example.com", "CPA_TOKEN": "secret", "CPA_WORKER_THREADS": "0"}, clear=True):
+            with self.assertRaises(SettingsError):
+                load_settings(env_file=env_file)
+
+    def test_load_settings_rejects_zero_status_port(self):
+        env_file = Path("does-not-exist.env")
+        with patch.dict(
+            os.environ,
+            {
+                "CPA_ENDPOINT": "https://example.com",
+                "CPA_TOKEN": "secret",
+                "CPA_STATUS_PORT": "0",
+            },
+            clear=True,
+        ):
             with self.assertRaises(SettingsError):
                 load_settings(env_file=env_file)

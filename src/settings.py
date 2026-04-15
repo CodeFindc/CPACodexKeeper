@@ -11,6 +11,9 @@ DEFAULT_CPA_TIMEOUT_SECONDS = 30
 DEFAULT_MAX_RETRIES = 2
 DEFAULT_WORKER_THREADS = 8
 DEFAULT_ENABLE_REFRESH = False
+DEFAULT_STATUS_SNAPSHOT_PATH = Path("logs/status-snapshot.json")
+DEFAULT_STATUS_HOST = "127.0.0.1"
+DEFAULT_STATUS_PORT = 8080
 PROJECT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
@@ -31,6 +34,9 @@ class Settings:
     max_retries: int = DEFAULT_MAX_RETRIES
     worker_threads: int = DEFAULT_WORKER_THREADS
     enable_refresh: bool = DEFAULT_ENABLE_REFRESH
+    status_snapshot_path: Path = DEFAULT_STATUS_SNAPSHOT_PATH
+    status_host: str = DEFAULT_STATUS_HOST
+    status_port: int = DEFAULT_STATUS_PORT
 
 
 def _read_project_env_file(env_file: Path | None = None) -> dict[str, str]:
@@ -93,6 +99,8 @@ def load_settings(env_file: Path | None = None) -> Settings:
     endpoint = (_get_config_value("CPA_ENDPOINT", env_values) or "").strip().rstrip("/")
     token = (_get_config_value("CPA_TOKEN", env_values) or "").strip()
     proxy = (_get_config_value("CPA_PROXY", env_values) or "").strip() or None
+    status_snapshot_raw = (_get_config_value("CPA_STATUS_SNAPSHOT", env_values) or "").strip()
+    status_host = (_get_config_value("CPA_STATUS_HOST", env_values) or DEFAULT_STATUS_HOST).strip() or DEFAULT_STATUS_HOST
 
     if not endpoint:
         raise SettingsError("CPA_ENDPOINT is required")
@@ -113,4 +121,7 @@ def load_settings(env_file: Path | None = None) -> Settings:
         max_retries=_read_int("CPA_MAX_RETRIES", DEFAULT_MAX_RETRIES, env_values, minimum=0, maximum=5),
         worker_threads=_read_int("CPA_WORKER_THREADS", DEFAULT_WORKER_THREADS, env_values, minimum=1),
         enable_refresh=_read_bool("CPA_ENABLE_REFRESH", DEFAULT_ENABLE_REFRESH, env_values),
+        status_snapshot_path=Path(status_snapshot_raw) if status_snapshot_raw else DEFAULT_STATUS_SNAPSHOT_PATH,
+        status_host=status_host,
+        status_port=_read_int("CPA_STATUS_PORT", DEFAULT_STATUS_PORT, env_values, minimum=1),
     )
