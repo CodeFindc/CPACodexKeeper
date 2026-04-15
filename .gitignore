@@ -8,3 +8,7 @@ logs/
 *.egg-info/
 dist/
 build/
+.claude/
+.planning/
+.worktrees/
+docs/
