@@ -13,5 +13,3 @@ build/
 .worktrees/
 docs/
 .gstack/
-
-frontend/node_modules/
