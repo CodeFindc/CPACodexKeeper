@@ -3,13 +3,14 @@ import sys
 import unittest
 from concurrent.futures import Future
 from datetime import datetime, timedelta, timezone
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from src.maintainer import CPACodexKeeper
 from src.openai_client import parse_usage_info
 from src.settings import Settings
+from src.status_snapshot import RESULT_FAILURE, RESULT_PARTIAL, RESULT_SUCCESS
 
 
 class MaintainerTests(unittest.TestCase):
@@ -413,6 +414,156 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(self.maintainer.stats.alive, 1)
         self.maintainer.delete_token.assert_not_called()
         self.maintainer.check_token_live.assert_called_once()
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_writes_started_and_finished_snapshots_for_once_mode(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "t1"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            future.set_result(fn(token_info, idx, total))
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            self.maintainer.stats.alive += 1
+            return "alive"
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run(mode="once")
+
+        self.assertEqual(self.maintainer.snapshot_writer.write_started.call_count, 1)
+        self.assertEqual(self.maintainer.snapshot_writer.write_finished.call_count, 1)
+        started_args = self.maintainer.snapshot_writer.write_started.call_args.args
+        self.assertEqual(started_args[0], "once")
+        self.assertEqual(started_args[1], self.settings.interval_seconds)
+        finished_args = self.maintainer.snapshot_writer.write_finished.call_args.args
+        self.assertEqual(finished_args[0], "once")
+        self.assertEqual(finished_args[1], self.settings.interval_seconds)
+        self.assertEqual(finished_args[2], RESULT_SUCCESS)
+        self.assertIsInstance(finished_args[3], dict)
+        self.assertEqual(finished_args[3]["alive"], 1)
+        self.assertEqual(finished_args[4], "2026-04-14T12:00:00Z")
+
+    def test_run_writes_finished_snapshot_when_no_tokens_are_found(self):
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
+        self.maintainer.get_token_list = Mock(return_value=[])
+
+        self.maintainer.run(mode="once")
+
+        self.maintainer.snapshot_writer.write_started.assert_called_once_with("once", self.settings.interval_seconds)
+        self.maintainer.snapshot_writer.write_finished.assert_called_once_with(
+            "once",
+            self.settings.interval_seconds,
+            RESULT_SUCCESS,
+            self.maintainer.stats.as_dict(),
+            "2026-04-14T12:00:00Z",
+        )
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_writes_partial_snapshot_when_network_errors_exist(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "t1"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            future.set_result(fn(token_info, idx, total))
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            self.maintainer.stats.network_error += 1
+            return "network_error"
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run(mode="daemon")
+
+        finished_args = self.maintainer.snapshot_writer.write_finished.call_args.args
+        self.assertEqual(finished_args[0], "daemon")
+        self.assertEqual(finished_args[2], RESULT_PARTIAL)
+        self.assertEqual(finished_args[3]["network_error"], 1)
+
+    @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
+    @patch("src.maintainer.as_completed")
+    @patch("src.maintainer.ThreadPoolExecutor")
+    def test_run_writes_partial_snapshot_when_worker_future_raises(self, executor_cls, as_completed_mock, _shuffle_mock):
+        tokens = [{"name": "ok"}, {"name": "boom"}]
+        self.maintainer.get_token_list = Mock(return_value=tokens)
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
+
+        def submit_side_effect(fn, token_info, idx, total):
+            future = Future()
+            try:
+                future.set_result(fn(token_info, idx, total))
+            except Exception as exc:
+                future.set_exception(exc)
+            return future
+
+        executor = executor_cls.return_value.__enter__.return_value
+        executor.submit.side_effect = submit_side_effect
+        as_completed_mock.side_effect = lambda items: list(items)
+
+        def process_side_effect(token_info, idx, total):
+            if token_info["name"] == "boom":
+                raise RuntimeError("unexpected boom")
+            self.maintainer.stats.alive += 1
+            return "alive"
+
+        self.maintainer.process_token = Mock(side_effect=process_side_effect)
+
+        self.maintainer.run(mode="once")
+
+        finished_args = self.maintainer.snapshot_writer.write_finished.call_args.args
+        self.assertEqual(finished_args[0], "once")
+        self.assertEqual(finished_args[2], RESULT_PARTIAL)
+        self.assertEqual(finished_args[3]["alive"], 1)
+
+    def test_run_writes_failure_snapshot_when_listing_tokens_raises(self):
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.get_token_list = Mock(side_effect=RuntimeError("list failed"))
+
+        with self.assertRaisesRegex(RuntimeError, "list failed"):
+            self.maintainer.run(mode="once")
+
+        self.maintainer.snapshot_writer.write_started.assert_called_once_with("once", self.settings.interval_seconds)
+        self.maintainer.snapshot_writer.write_finished.assert_called_once()
+        finished_args = self.maintainer.snapshot_writer.write_finished.call_args.args
+        self.assertEqual(finished_args[0], "once")
+        self.assertEqual(finished_args[2], RESULT_FAILURE)
+        self.assertEqual(finished_args[3], self.maintainer.stats.as_dict())
+        self.assertIsNotNone(finished_args[4])
+
+    @patch.object(CPACodexKeeper, "run")
+    def test_run_forever_uses_daemon_mode(self, run_mock):
+        run_mock.side_effect = KeyboardInterrupt()
+
+        with self.assertRaises(KeyboardInterrupt):
+            self.maintainer.run_forever(interval_seconds=123)
+
+        run_mock.assert_called_once_with(mode="daemon")
 
     @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
     @patch("src.maintainer.as_completed")

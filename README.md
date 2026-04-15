@@ -187,6 +187,25 @@ python main.py
 python main.py --once --dry-run
 ```
 
+### 状态页
+
+如果你希望单独暴露最近一次巡检状态，可以启动内置状态页服务：
+
+```bash
+python main.py status-server
+```
+
+默认地址：
+
+- HTML 页面：`http://127.0.0.1:8080/status`
+- JSON 接口：`http://127.0.0.1:8080/api/status.json`
+
+相关配置项：
+
+- `CPA_STATUS_SNAPSHOT`：状态快照文件路径，默认 `logs/status-snapshot.json`
+- `CPA_STATUS_HOST`：状态服务监听地址，默认 `127.0.0.1`
+- `CPA_STATUS_PORT`：状态服务监听端口，默认 `8080`
+
 ---
 
 ## 6. Docker 部署

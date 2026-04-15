@@ -185,6 +185,25 @@ This will not actually delete, disable, enable, or upload updates:
 python main.py --once --dry-run
 ```
 
+### Status page
+
+If you want to expose the latest inspection status separately, start the built-in status server:
+
+```bash
+python main.py status-server
+```
+
+Default endpoints:
+
+- HTML page: `http://127.0.0.1:8080/status`
+- JSON endpoint: `http://127.0.0.1:8080/api/status.json`
+
+Related settings:
+
+- `CPA_STATUS_SNAPSHOT`: status snapshot file path, default `logs/status-snapshot.json`
+- `CPA_STATUS_HOST`: status server bind host, default `127.0.0.1`
+- `CPA_STATUS_PORT`: status server bind port, default `8080`
+
 ---
 
 ## 6. Docker deployment
