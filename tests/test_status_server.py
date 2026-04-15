@@ -2,6 +2,7 @@ import json
 import pathlib
 import sys
 import tempfile
+import threading
 import unittest
 import urllib.error
 import urllib.request
@@ -105,6 +106,17 @@ class StatusServerTests(unittest.TestCase):
         self.assertEqual(json.loads(json_error.read().decode("utf-8"))["state"], "snapshot-error")
         self.assertEqual(html_error.code, 503)
         self.assertIn("snapshot-error", html_error.read().decode("utf-8"))
+
+    def test_status_server_wait_returns_after_close(self):
+        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)
+        self.server.start()
+
+        waiter = threading.Thread(target=self.server.wait, daemon=True)
+        waiter.start()
+        self.server.close()
+        waiter.join(timeout=1)
+
+        self.assertFalse(waiter.is_alive())
 
     def test_unknown_path_returns_404(self):
         self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)

@@ -234,6 +234,37 @@ class StatusSnapshotTests(unittest.TestCase):
         self.assertIn("invalid_snapshot", html)
         self.assertIn("invalid JSON", html)
 
+    def test_write_snapshot_uses_atomic_replace(self):
+        snapshot = SnapshotPayload(
+            mode=MODE_ONCE,
+            result=RESULT_SUCCESS,
+            started_at=to_iso8601(self.now - timedelta(seconds=10)),
+            finished_at=to_iso8601(self.now - timedelta(seconds=5)),
+            updated_at=to_iso8601(self.now),
+            interval_seconds=300,
+            summary={
+                "total": 1,
+                "alive": 1,
+                "dead": 0,
+                "disabled": 0,
+                "enabled": 0,
+                "refreshed": 0,
+                "skipped": 0,
+                "network_error": 0,
+            },
+        )
+        replace_calls = []
+        original_replace = pathlib.Path.replace
+
+        def tracking_replace(path_obj, target):
+            replace_calls.append((pathlib.Path(path_obj).name, pathlib.Path(target).name))
+            return original_replace(path_obj, target)
+
+        with unittest.mock.patch("pathlib.Path.replace", new=tracking_replace):
+            self.store.write_snapshot(snapshot)
+
+        self.assertEqual(replace_calls, [(".status-snapshot.json.tmp", "status-snapshot.json")])
+
     def test_write_snapshot_persists_raw_json(self):
         snapshot = SnapshotPayload(
             mode=MODE_ONCE,

@@ -23,8 +23,8 @@ class SettingsError(ValueError):
 
 @dataclass(slots=True)
 class Settings:
-    cpa_endpoint: str
-    cpa_token: str
+    cpa_endpoint: str | None = None
+    cpa_token: str | None = None
     proxy: str | None = None
     interval_seconds: int = DEFAULT_INTERVAL_SECONDS
     quota_threshold: int = DEFAULT_QUOTA_THRESHOLD
@@ -92,6 +92,17 @@ def _read_bool(name: str, default: bool, env_values: dict[str, str]) -> bool:
     if normalized in {"0", "false", "no", "off"}:
         return False
     raise SettingsError(f"{name} must be a boolean")
+
+
+def load_status_settings(env_file: Path | None = None) -> Settings:
+    env_values = _read_project_env_file(env_file)
+    status_snapshot_raw = (_get_config_value("CPA_STATUS_SNAPSHOT", env_values) or "").strip()
+    status_host = (_get_config_value("CPA_STATUS_HOST", env_values) or DEFAULT_STATUS_HOST).strip() or DEFAULT_STATUS_HOST
+    return Settings(
+        status_snapshot_path=Path(status_snapshot_raw) if status_snapshot_raw else DEFAULT_STATUS_SNAPSHOT_PATH,
+        status_host=status_host,
+        status_port=_read_int("CPA_STATUS_PORT", DEFAULT_STATUS_PORT, env_values, minimum=1),
+    )
 
 
 def load_settings(env_file: Path | None = None) -> Settings:

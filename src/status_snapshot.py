@@ -207,7 +207,9 @@ class SnapshotStore:
 
     def write_raw_json(self, payload: dict) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        temp_path = self.path.with_name(f".{self.path.name}.tmp")
+        temp_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
+        temp_path.replace(self.path)
 
     def write_snapshot(self, snapshot: SnapshotPayload) -> None:
         self.write_raw_json(asdict(snapshot))

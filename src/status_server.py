@@ -3,7 +3,10 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from status_snapshot import SnapshotStore, render_status_html
+try:
+    from .status_snapshot import SnapshotStore, render_status_html
+except ImportError:
+    from status_snapshot import SnapshotStore, render_status_html
 
 
 class StatusServer:
@@ -11,6 +14,7 @@ class StatusServer:
         self._store = SnapshotStore(snapshot_path)
         self._server = ThreadingHTTPServer((host, port), self._build_handler())
         self._thread = threading.Thread(target=self._server.serve_forever, name="status-server", daemon=True)
+        self._stopped = threading.Event()
 
     @property
     def address(self) -> tuple[str, int]:
@@ -21,11 +25,15 @@ class StatusServer:
         if not self._thread.is_alive():
             self._thread.start()
 
+    def wait(self) -> None:
+        self._stopped.wait()
+
     def close(self) -> None:
         self._server.shutdown()
         self._server.server_close()
         if self._thread.is_alive():
             self._thread.join(timeout=5)
+        self._stopped.set()
 
     def _build_handler(self):
         store = self._store

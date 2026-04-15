@@ -1,9 +1,6 @@
-import pathlib
-import sys
-import threading
-
 from .maintainer import CPACodexKeeper
-from .settings import SettingsError, load_settings
+from .settings import SettingsError, load_settings, load_status_settings
+from .status_server import StatusServer
 
 
 def build_arg_parser():
@@ -20,36 +17,35 @@ def build_arg_parser():
 
 
 def serve_status(settings) -> None:
-    src_dir = pathlib.Path(__file__).resolve().parent
-    src_dir_str = str(src_dir)
-    if src_dir_str not in sys.path:
-        sys.path.insert(0, src_dir_str)
-
-    from status_server import StatusServer
-
     server = StatusServer(settings.status_host, settings.status_port, settings.status_snapshot_path)
     host, port = server.address
     print(f"Status server listening on http://{host}:{port}/status")
     print(f"JSON status endpoint: http://{host}:{port}/api/status.json")
     server.start()
-    stop_event = threading.Event()
     try:
-        stop_event.wait()
+        server.wait()
     except KeyboardInterrupt:
+        pass
+    finally:
         server.close()
 
 
 def main() -> int:
     parser = build_arg_parser()
     args = parser.parse_args()
+
+    if args.command == "status-server":
+        try:
+            settings = load_status_settings()
+        except SettingsError as exc:
+            parser.exit(status=2, message=f"Configuration error: {exc}\n")
+        serve_status(settings)
+        return 0
+
     try:
         settings = load_settings()
     except SettingsError as exc:
         parser.exit(status=2, message=f"Configuration error: {exc}\n")
-
-    if args.command == "status-server":
-        serve_status(settings)
-        return 0
 
     maintainer = CPACodexKeeper(settings=settings, dry_run=args.dry_run)
     if args.daemon:

@@ -45,17 +45,16 @@ class CLITests(unittest.TestCase):
         keeper.run.assert_called_once()
         keeper.run_forever.assert_not_called()
 
+    @patch("src.cli.load_status_settings")
     @patch("src.cli.load_settings")
     @patch("src.cli.serve_status")
     @patch("sys.argv", ["prog", "status-server"])
-    def test_main_dispatches_status_server(self, serve_status_mock, load_settings_mock):
-        settings = Settings(
-            cpa_endpoint="https://example.com",
-            cpa_token="secret",
-        )
-        load_settings_mock.return_value = settings
+    def test_main_dispatches_status_server(self, serve_status_mock, load_settings_mock, load_status_settings_mock):
+        settings = Settings(status_host="127.0.0.1", status_port=8080)
+        load_status_settings_mock.return_value = settings
 
         exit_code = main()
 
         self.assertEqual(exit_code, 0)
+        load_settings_mock.assert_not_called()
         serve_status_mock.assert_called_once_with(settings)
