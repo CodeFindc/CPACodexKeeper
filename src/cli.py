@@ -17,7 +17,12 @@ def build_arg_parser():
 
 
 def serve_status(settings) -> None:
-    server = StatusServer(settings.status_host, settings.status_port, settings.status_snapshot_path)
+    server = StatusServer(
+        settings.status_host,
+        settings.status_port,
+        settings.status_snapshot_path,
+        settings.status_static_dir,
+    )
     host, port = server.address
     print(f"Status server listening on http://{host}:{port}/status")
     print(f"JSON status endpoint: http://{host}:{port}/api/status.json")

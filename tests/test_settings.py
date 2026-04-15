@@ -52,6 +52,7 @@ class SettingsTests(unittest.TestCase):
                 "CPA_STATUS_SNAPSHOT": "/tmp/status.json",
                 "CPA_STATUS_HOST": "0.0.0.0",
                 "CPA_STATUS_PORT": "9090",
+                "CPA_STATUS_STATIC_DIR": "/tmp/frontend-dist",
             },
             clear=True,
         ):
@@ -60,6 +61,7 @@ class SettingsTests(unittest.TestCase):
         self.assertEqual(settings.status_snapshot_path, Path("/tmp/status.json"))
         self.assertEqual(settings.status_host, "0.0.0.0")
         self.assertEqual(settings.status_port, 9090)
+        self.assertEqual(settings.status_static_dir, Path("/tmp/frontend-dist"))
         self.assertIsNone(settings.cpa_endpoint)
         self.assertIsNone(settings.cpa_token)
 

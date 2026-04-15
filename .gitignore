@@ -12,3 +12,6 @@ build/
 .planning/
 .worktrees/
 docs/
+.gstack/
+
+frontend/node_modules/

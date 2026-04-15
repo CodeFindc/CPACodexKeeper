@@ -2,9 +2,14 @@ set shell := ["bash", "-cu"]
 
 install:
     python -m pip install -r requirements.txt
+    npm install --prefix frontend
 
 test:
     python -m unittest discover -s tests
+    npm test --prefix frontend
+
+frontend-build:
+    npm run build --prefix frontend
 
 run-once:
     python main.py --once
