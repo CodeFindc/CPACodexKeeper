@@ -423,6 +423,7 @@ class MaintainerTests(unittest.TestCase):
         self.maintainer.get_token_list = Mock(return_value=tokens)
         self.maintainer.log_startup = Mock()
         self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
 
         def submit_side_effect(fn, token_info, idx, total):
             future = Future()
@@ -452,7 +453,24 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(finished_args[2], RESULT_SUCCESS)
         self.assertIsInstance(finished_args[3], dict)
         self.assertEqual(finished_args[3]["alive"], 1)
-        self.assertIsNotNone(finished_args[4])
+        self.assertEqual(finished_args[4], "2026-04-14T12:00:00Z")
+
+    def test_run_writes_finished_snapshot_when_no_tokens_are_found(self):
+        self.maintainer.log_startup = Mock()
+        self.maintainer.snapshot_writer = Mock()
+        self.maintainer.snapshot_writer.write_started.return_value = "2026-04-14T12:00:00Z"
+        self.maintainer.get_token_list = Mock(return_value=[])
+
+        self.maintainer.run(mode="once")
+
+        self.maintainer.snapshot_writer.write_started.assert_called_once_with("once", self.settings.interval_seconds)
+        self.maintainer.snapshot_writer.write_finished.assert_called_once_with(
+            "once",
+            self.settings.interval_seconds,
+            RESULT_SUCCESS,
+            self.maintainer.stats.as_dict(),
+            "2026-04-14T12:00:00Z",
+        )
 
     @patch("src.maintainer.random.shuffle", side_effect=lambda seq: None)
     @patch("src.maintainer.as_completed")

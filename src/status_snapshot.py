@@ -35,7 +35,7 @@ SUMMARY_FIELDS = (
 class SnapshotPayload:
     mode: str
     started_at: str
-    finished_at: str
+    finished_at: str | None
     updated_at: str
     interval_seconds: int
     result: str
@@ -96,7 +96,7 @@ class SnapshotWriter:
             {
                 "mode": mode,
                 "started_at": timestamp,
-                "finished_at": timestamp,
+                "finished_at": None,
                 "updated_at": timestamp,
                 "interval_seconds": interval_seconds,
                 "result": RESULT_FAILURE,
@@ -226,7 +226,7 @@ class SnapshotStore:
         mode = self._require_enum(payload, "mode", {MODE_ONCE, MODE_DAEMON, MODE_UNKNOWN})
         result = self._require_enum(payload, "result", {RESULT_SUCCESS, RESULT_PARTIAL, RESULT_FAILURE})
         started_at = self._require_timestamp(payload, "started_at")
-        finished_at = self._require_timestamp(payload, "finished_at")
+        finished_at = self._require_optional_timestamp(payload, "finished_at")
         updated_at = self._require_timestamp(payload, "updated_at")
         interval_seconds = self._require_int(payload, "interval_seconds")
         if interval_seconds <= 0:
@@ -244,6 +244,17 @@ class SnapshotStore:
 
     def _require_timestamp(self, payload: dict, field_name: str) -> str:
         value = self._require_string(payload, field_name)
+        parse_iso8601(value, field_name)
+        return value
+
+    def _require_optional_timestamp(self, payload: dict, field_name: str) -> str | None:
+        if field_name not in payload:
+            raise SnapshotValidationError(f"missing required field: {field_name}")
+        value = payload[field_name]
+        if value is None:
+            return None
+        if not isinstance(value, str) or not value:
+            raise SnapshotValidationError(f"field {field_name} must be null or a non-empty string")
         parse_iso8601(value, field_name)
         return value
 

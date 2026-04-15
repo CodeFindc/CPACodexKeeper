@@ -204,6 +204,46 @@ class StatusSnapshotTests(unittest.TestCase):
         self.assertEqual(raw_payload["result"], RESULT_FAILURE)
         self.assertEqual(raw_payload["summary"]["network_error"], 1)
 
+    def test_snapshot_writer_writes_started_snapshot_with_null_finished_at(self):
+        writer = SnapshotWriter(self.snapshot_path)
+
+        started_at = writer.write_started(MODE_DAEMON, 300, started_at=self.now - timedelta(seconds=20))
+
+        raw_payload = json.loads(self.snapshot_path.read_text(encoding="utf-8"))
+        self.assertEqual(started_at, to_iso8601(self.now - timedelta(seconds=20)))
+        self.assertEqual(raw_payload["started_at"], to_iso8601(self.now - timedelta(seconds=20)))
+        self.assertIsNone(raw_payload["finished_at"])
+        self.assertEqual(raw_payload["updated_at"], to_iso8601(self.now - timedelta(seconds=20)))
+        self.assertEqual(raw_payload["result"], RESULT_FAILURE)
+
+    def test_resolve_started_snapshot_accepts_null_finished_at(self):
+        self.store.write_raw_json(
+            {
+                "mode": MODE_DAEMON,
+                "result": RESULT_FAILURE,
+                "started_at": to_iso8601(self.now - timedelta(seconds=20)),
+                "finished_at": None,
+                "updated_at": to_iso8601(self.now - timedelta(seconds=20)),
+                "interval_seconds": 300,
+                "summary": {
+                    "total": 0,
+                    "alive": 0,
+                    "dead": 0,
+                    "disabled": 0,
+                    "enabled": 0,
+                    "refreshed": 0,
+                    "skipped": 0,
+                    "network_error": 0,
+                },
+            }
+        )
+
+        resolved = self.store.resolve(now=self.now)
+
+        self.assertEqual(resolved.state, STATE_DAEMON_ACTIVE)
+        self.assertEqual(resolved.finished_at, None)
+        self.assertEqual(resolved.started_at, to_iso8601(self.now - timedelta(seconds=20)))
+
     def test_snapshot_writer_writes_started_and_finished_snapshots(self):
         writer = SnapshotWriter(self.snapshot_path)
         started_at = writer.write_started(MODE_DAEMON, 300, started_at=self.now - timedelta(seconds=20))

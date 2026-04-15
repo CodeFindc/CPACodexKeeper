@@ -350,7 +350,7 @@ class CPACodexKeeper:
     def run(self, mode=MODE_ONCE):
         self.reset_stats()
         started_at = self.snapshot_writer.write_started(mode, self.settings.interval_seconds)
-        finished_written = False
+        result = RESULT_SUCCESS
         try:
             self.log_startup()
             tokens = self.get_token_list()
@@ -396,18 +396,17 @@ class CPACodexKeeper:
             self.log("INFO", f"- 网络失败: {stats['network_error']}", indent=1)
             self.logger.divider()
             result = self._derive_snapshot_result(stats)
-            self.snapshot_writer.write_finished(mode, self.settings.interval_seconds, result, stats, started_at)
-            finished_written = True
         except Exception:
-            if not finished_written:
-                self.snapshot_writer.write_finished(
-                    mode,
-                    self.settings.interval_seconds,
-                    RESULT_FAILURE,
-                    self._stats_snapshot(),
-                    started_at,
-                )
+            result = RESULT_FAILURE
             raise
+        finally:
+            self.snapshot_writer.write_finished(
+                mode,
+                self.settings.interval_seconds,
+                result,
+                self._stats_snapshot(),
+                started_at,
+            )
 
     def _derive_snapshot_result(self, stats):
         if stats["network_error"] > 0:
