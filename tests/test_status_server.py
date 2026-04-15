@@ -61,29 +61,11 @@ class StatusServerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "partial")
         self.assertEqual(payload["summary"]["network_error"], 1)
 
-    def test_status_html_returns_resolved_snapshot_html(self):
-        now = utc_now()
-        self.store.write_snapshot(
-            SnapshotPayload(
-                mode=MODE_DAEMON,
-                result=RESULT_PARTIAL,
-                started_at=to_iso8601(now - timedelta(seconds=20)),
-                finished_at=to_iso8601(now - timedelta(seconds=10)),
-                updated_at=to_iso8601(now),
-                interval_seconds=300,
-                summary={
-                    "total": 2,
-                    "alive": 1,
-                    "dead": 1,
-                    "disabled": 0,
-                    "enabled": 0,
-                    "refreshed": 0,
-                    "skipped": 0,
-                    "network_error": 1,
-                },
-            )
-        )
-        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)
+    def test_status_html_serves_frontend_index_from_static_dir(self):
+        static_dir = pathlib.Path(self.temp_dir.name) / "frontend-dist"
+        static_dir.mkdir()
+        (static_dir / "index.html").write_text("<html><body>react status app</body></html>", encoding="utf-8")
+        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path, static_dir=static_dir)
         self.server.start()
 
         response = self._get("/status")
@@ -91,21 +73,22 @@ class StatusServerTests(unittest.TestCase):
 
         self.assertEqual(response.status, 200)
         self.assertEqual(response.headers["Content-Type"], "text/html; charset=utf-8")
-        self.assertIn("daemon-active", body)
-        self.assertIn("network_error", body)
+        self.assertIn("react status app", body)
 
-    def test_status_surfaces_snapshot_error_as_http_503_for_json_and_html(self):
-        self.snapshot_path.write_text("{not-json", encoding="utf-8")
-        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)
+    def test_status_static_asset_serves_css_file(self):
+        static_dir = pathlib.Path(self.temp_dir.name) / "frontend-dist"
+        assets_dir = static_dir / "assets"
+        assets_dir.mkdir(parents=True)
+        (assets_dir / "app.css").write_text("body { color: #00ff41; }", encoding="utf-8")
+        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path, static_dir=static_dir)
         self.server.start()
 
-        json_error = self._get_error("/api/status.json")
-        html_error = self._get_error("/status")
+        response = self._get("/status/assets/app.css")
+        body = response.read().decode("utf-8")
 
-        self.assertEqual(json_error.code, 503)
-        self.assertEqual(json.loads(json_error.read().decode("utf-8"))["state"], "snapshot-error")
-        self.assertEqual(html_error.code, 503)
-        self.assertIn("snapshot-error", html_error.read().decode("utf-8"))
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.headers["Content-Type"], "text/css")
+        self.assertEqual(body, "body { color: #00ff41; }")
 
     def test_status_server_wait_returns_after_close(self):
         self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)

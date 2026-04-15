@@ -12,3 +12,4 @@ build/
 .planning/
 .worktrees/
 docs/
+.gstack/

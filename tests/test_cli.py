@@ -45,6 +45,31 @@ class CLITests(unittest.TestCase):
         keeper.run.assert_called_once()
         keeper.run_forever.assert_not_called()
 
+    @patch("src.cli.StatusServer")
+    def test_serve_status_passes_static_dir_to_status_server(self, server_cls):
+        settings = Settings(
+            status_host="127.0.0.1",
+            status_port=8080,
+            status_snapshot_path=pathlib.Path("/tmp/status.json"),
+            status_static_dir=pathlib.Path("/tmp/frontend-dist"),
+        )
+        server = server_cls.return_value
+        server.address = ("127.0.0.1", 8080)
+
+        from src.cli import serve_status
+
+        serve_status(settings)
+
+        server_cls.assert_called_once_with(
+            "127.0.0.1",
+            8080,
+            pathlib.Path("/tmp/status.json"),
+            pathlib.Path("/tmp/frontend-dist"),
+        )
+        server.start.assert_called_once()
+        server.wait.assert_called_once()
+        server.close.assert_called_once()
+
     @patch("src.cli.load_status_settings")
     @patch("src.cli.load_settings")
     @patch("src.cli.serve_status")

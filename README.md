@@ -195,6 +195,14 @@ python main.py --once --dry-run
 python main.py status-server
 ```
 
+状态页前端使用 React + Tailwind CSS 开发，构建完成后由 Python HTTP 服务直接托管静态文件。
+首次开发或更新前端依赖后，先执行：
+
+```bash
+npm install --prefix frontend
+npm run build --prefix frontend
+```
+
 默认地址：
 
 - HTML 页面：`http://127.0.0.1:8080/status`
@@ -205,6 +213,7 @@ python main.py status-server
 - `CPA_STATUS_SNAPSHOT`：状态快照文件路径，默认 `logs/status-snapshot.json`
 - `CPA_STATUS_HOST`：状态服务监听地址，默认 `127.0.0.1`
 - `CPA_STATUS_PORT`：状态服务监听端口，默认 `8080`
+- `CPA_STATUS_STATIC_DIR`：前端构建产物目录，默认 `frontend/dist`
 
 ---
 
@@ -297,6 +306,7 @@ docker compose up -d --build
 ```bash
 just install
 just test
+just frontend-build
 just run-once
 just dry-run
 just daemon
