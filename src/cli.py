@@ -1,6 +1,9 @@
-from .maintainer import CPACodexKeeper
+from .combined_runtime import run_combined
 from .settings import SettingsError, load_settings, load_status_settings
 from .status_server import StatusServer
+
+
+CPACodexKeeper = None
 
 
 def build_arg_parser():
@@ -11,6 +14,7 @@ def build_arg_parser():
     parser.add_argument("--daemon", action="store_true", default=True, help="守护模式，默认开启 / Run forever")
     parser.add_argument("--once", dest="daemon", action="store_false", help="仅执行一轮后退出 / Run once")
     subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("combined", help="同时启动 keeper 与状态页服务 / Run keeper and status server together")
     subparsers.add_parser("status-server", help="启动状态页服务 / Run status server")
     parser.set_defaults(command="run")
     return parser
@@ -35,6 +39,15 @@ def serve_status(settings) -> None:
         server.close()
 
 
+def _get_keeper_class():
+    global CPACodexKeeper
+    if CPACodexKeeper is None:
+        from .maintainer import CPACodexKeeper as keeper_class
+
+        CPACodexKeeper = keeper_class
+    return CPACodexKeeper
+
+
 def main() -> int:
     parser = build_arg_parser()
     args = parser.parse_args()
@@ -47,12 +60,20 @@ def main() -> int:
         serve_status(settings)
         return 0
 
+    if args.command == "combined":
+        try:
+            settings = load_settings()
+        except SettingsError as exc:
+            parser.exit(status=2, message=f"Configuration error: {exc}\n")
+        run_combined(settings, dry_run=args.dry_run)
+        return 0
+
     try:
         settings = load_settings()
     except SettingsError as exc:
         parser.exit(status=2, message=f"Configuration error: {exc}\n")
 
-    maintainer = CPACodexKeeper(settings=settings, dry_run=args.dry_run)
+    maintainer = _get_keeper_class()(settings=settings, dry_run=args.dry_run)
     if args.daemon:
         maintainer.run_forever(interval_seconds=settings.interval_seconds)
         return 0
