@@ -65,7 +65,7 @@ def main() -> int:
             settings = load_settings()
         except SettingsError as exc:
             parser.exit(status=2, message=f"Configuration error: {exc}\n")
-        run_combined(settings, dry_run=args.dry_run)
+        run_combined(settings, dry_run=args.dry_run, daemon=args.daemon)
         return 0
 
     try:

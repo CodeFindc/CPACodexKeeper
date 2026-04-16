@@ -30,6 +30,13 @@ class CLITests(unittest.TestCase):
         self.assertEqual(args.command, "combined")
         self.assertTrue(args.daemon)
 
+    def test_parser_combined_respects_once_flag(self):
+        parser = build_arg_parser()
+        args = parser.parse_args(["--once", "combined"])
+
+        self.assertEqual(args.command, "combined")
+        self.assertFalse(args.daemon)
+
     def test_once_disables_daemon_mode(self):
         parser = build_arg_parser()
         args = parser.parse_args(["--once"])
@@ -122,7 +129,7 @@ class CLITests(unittest.TestCase):
     @patch("src.cli.CPACodexKeeper")
     @patch("src.cli.run_combined")
     @patch("sys.argv", ["prog", "--dry-run", "combined"])
-    def test_main_dispatches_combined_command(self, run_combined_mock, keeper_cls, load_settings_mock):
+    def test_main_dispatches_combined_command_in_daemon_mode(self, run_combined_mock, keeper_cls, load_settings_mock):
         settings = Settings(
             cpa_endpoint="https://example.com",
             cpa_token="secret",
@@ -133,7 +140,25 @@ class CLITests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         load_settings_mock.assert_called_once()
-        run_combined_mock.assert_called_once_with(settings, dry_run=True)
+        run_combined_mock.assert_called_once_with(settings, dry_run=True, daemon=True)
+        keeper_cls.assert_not_called()
+
+    @patch("src.cli.load_settings")
+    @patch("src.cli.CPACodexKeeper")
+    @patch("src.cli.run_combined")
+    @patch("sys.argv", ["prog", "--once", "combined"])
+    def test_main_dispatches_combined_command_in_once_mode(self, run_combined_mock, keeper_cls, load_settings_mock):
+        settings = Settings(
+            cpa_endpoint="https://example.com",
+            cpa_token="secret",
+        )
+        load_settings_mock.return_value = settings
+
+        exit_code = main()
+
+        self.assertEqual(exit_code, 0)
+        load_settings_mock.assert_called_once()
+        run_combined_mock.assert_called_once_with(settings, dry_run=False, daemon=False)
         keeper_cls.assert_not_called()
 
     @patch("src.cli.load_settings", side_effect=SettingsError("bad config"))
@@ -176,7 +201,7 @@ class CLITests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "startup failed"):
             main()
 
-        run_combined_mock.assert_called_once_with(settings, dry_run=False)
+        run_combined_mock.assert_called_once_with(settings, dry_run=False, daemon=True)
 
 
 if __name__ == "__main__":

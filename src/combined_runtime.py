@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from .settings import Settings
-from .status_snapshot import MODE_DAEMON
+from .status_snapshot import MODE_ONCE
 
 if TYPE_CHECKING:
     from .maintainer import CPACodexKeeper
@@ -12,6 +12,7 @@ def run_combined(
     settings: Settings,
     *,
     dry_run: bool = False,
+    daemon: bool = True,
     keeper_cls: type["CPACodexKeeper"] | None = None,
     server_cls: type["StatusServer"] | None = None,
 ) -> None:
@@ -34,11 +35,10 @@ def run_combined(
         )
         server.start()
         keeper = keeper_cls(settings=settings, dry_run=dry_run)
-        keeper.run(mode=MODE_DAEMON)
-    except BaseException:
+        if daemon:
+            keeper.run_forever(interval_seconds=settings.interval_seconds)
+        else:
+            keeper.run(mode=MODE_ONCE)
+    finally:
         if server is not None:
             server.close()
-        raise
-
-    if server is not None:
-        server.close()
