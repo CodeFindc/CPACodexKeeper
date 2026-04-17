@@ -153,6 +153,12 @@ class CPACodexKeeper:
         logger.log("INFO", f"剩余有效期: {remaining_str}", indent=1)
         return disabled, remaining_seconds, remaining_str, expiry_known
 
+    def _record_account_status(self, disabled: bool) -> None:
+        if disabled:
+            self._inc_stat("disabled")
+            return
+        self._inc_stat("enabled")
+
     def _has_refresh_token(self, token_detail):
         return bool((token_detail.get("refresh_token") or "").strip())
 
@@ -295,6 +301,7 @@ class CPACodexKeeper:
                 return self._skip_token("获取详情失败", logger)
 
             disabled, remaining_seconds, remaining_str, expiry_known = self._log_token_details(token_detail, logger)
+            self._record_account_status(disabled)
             cleanup_result = self._apply_non_refreshable_expiry_policy(name, token_detail, remaining_seconds, expiry_known, logger)
             if cleanup_result:
                 return cleanup_result
