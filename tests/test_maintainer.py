@@ -125,6 +125,7 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(args, ("t2",))
         self.assertEqual(kwargs["disabled"], True)
         self.assertEqual(self.maintainer.stats.disabled, 1)
+        self.assertEqual(self.maintainer.stats.enabled, 1)
 
     def test_process_token_disables_when_primary_quota_reaches_threshold_even_if_weekly_is_below(self):
         self.maintainer.get_token_detail = Mock(return_value={
@@ -155,6 +156,7 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(args, ("t2-primary",))
         self.assertEqual(kwargs["disabled"], True)
         self.assertEqual(self.maintainer.stats.disabled, 1)
+        self.assertEqual(self.maintainer.stats.enabled, 1)
 
     def test_process_token_enables_when_disabled_and_weekly_quota_below_threshold(self):
         self.maintainer.get_token_detail = Mock(return_value={
@@ -181,6 +183,7 @@ class MaintainerTests(unittest.TestCase):
         args, kwargs = self.maintainer.set_disabled_status.call_args
         self.assertEqual(args, ("t3",))
         self.assertEqual(kwargs["disabled"], False)
+        self.assertEqual(self.maintainer.stats.disabled, 1)
         self.assertEqual(self.maintainer.stats.enabled, 1)
 
     def test_process_token_keeps_disabled_when_primary_quota_still_reaches_threshold(self):
@@ -208,6 +211,7 @@ class MaintainerTests(unittest.TestCase):
 
         self.assertEqual(result, "alive")
         self.maintainer.set_disabled_status.assert_not_called()
+        self.assertEqual(self.maintainer.stats.disabled, 1)
         self.assertEqual(self.maintainer.stats.enabled, 0)
 
     def test_process_token_refreshes_when_near_expiry(self):
