@@ -27,14 +27,15 @@ def run_combined(
 
     server = None
     try:
+        keeper = keeper_cls(settings=settings, dry_run=dry_run)
         server = server_cls(
             settings.status_host,
             settings.status_port,
             settings.status_snapshot_path,
             settings.status_static_dir,
+            account_details_provider=keeper.list_account_details,
         )
         server.start()
-        keeper = keeper_cls(settings=settings, dry_run=dry_run)
         if daemon:
             keeper.run_forever(interval_seconds=settings.interval_seconds)
         else:

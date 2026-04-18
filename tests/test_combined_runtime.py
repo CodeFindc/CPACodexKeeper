@@ -24,13 +24,14 @@ class RecordingServer:
     should_fail_init = False
     should_fail_start = False
 
-    def __init__(self, host, port, snapshot_path, static_dir=None):
+    def __init__(self, host, port, snapshot_path, static_dir=None, account_details_provider=None):
         if self.__class__.should_fail_init:
             raise RuntimeError("server init failed")
         self.host = host
         self.port = port
         self.snapshot_path = snapshot_path
         self.static_dir = static_dir
+        self.account_details_provider = account_details_provider
         self.started = False
         self.closed = False
         self.close_calls = 0
@@ -57,6 +58,9 @@ class RecordingKeeper:
         self.run_modes = []
         self.run_forever_intervals = []
         self.__class__.instances.append(self)
+
+    def list_account_details(self):
+        return [{"id": "acct-1", "name": "Account 1"}]
 
     def run(self, mode):
         self.run_modes.append(mode)
@@ -132,7 +136,10 @@ class CombinedRuntimeTests(unittest.TestCase):
             )
 
         self.assertEqual(len(RecordingServer.instances), 1)
-        self.assertEqual(len(RecordingKeeper.instances), 0)
+        self.assertEqual(len(RecordingKeeper.instances), 1)
+        keeper = RecordingKeeper.instances[0]
+        self.assertEqual(keeper.run_modes, [])
+        self.assertEqual(keeper.run_forever_intervals, [])
         self.assertTrue(RecordingServer.instances[0].closed)
         self.assertEqual(RecordingServer.instances[0].close_calls, 1)
 

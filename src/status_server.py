@@ -1,6 +1,7 @@
 import json
 import mimetypes
 import threading
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -11,9 +12,17 @@ except ImportError:
 
 
 class StatusServer:
-    def __init__(self, host: str, port: int, snapshot_path: str | Path, static_dir: str | Path | None = None):
+    def __init__(
+        self,
+        host: str,
+        port: int,
+        snapshot_path: str | Path,
+        static_dir: str | Path | None = None,
+        account_details_provider: Callable[[], list[dict]] | None = None,
+    ):
         self._store = SnapshotStore(snapshot_path)
         self._static_dir = Path(static_dir) if static_dir is not None else None
+        self._account_details_provider = account_details_provider or (lambda: [])
         self._server = ThreadingHTTPServer((host, port), self._build_handler())
         self._thread = threading.Thread(target=self._server.serve_forever, name="status-server", daemon=True)
         self._stopped = threading.Event()
@@ -40,6 +49,7 @@ class StatusServer:
     def _build_handler(self):
         store = self._store
         static_dir = self._static_dir
+        account_details_provider = self._account_details_provider
 
         class StatusHandler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:
@@ -47,6 +57,10 @@ class StatusServer:
                 if self.path == "/api/status.json":
                     body = json.dumps(resolved.to_dict(), ensure_ascii=True, indent=2).encode("utf-8")
                     self._write_response(resolved.http_status(), "application/json; charset=utf-8", body)
+                    return
+                if self.path == "/api/accounts.json":
+                    body = json.dumps({"accounts": account_details_provider()}, ensure_ascii=True, indent=2).encode("utf-8")
+                    self._write_response(200, "application/json; charset=utf-8", body)
                     return
                 if self.path == "/status":
                     if static_dir is not None:
@@ -64,6 +78,10 @@ class StatusServer:
                     if static_root == asset_path or static_root in asset_path.parents:
                         if asset_path.is_file():
                             self._write_file_response(asset_path, "application/octet-stream")
+                            return
+                        index_path = static_dir / "index.html"
+                        if index_path.exists():
+                            self._write_file_response(index_path, "text/html; charset=utf-8")
                             return
                 self._write_response(404, "text/plain; charset=utf-8", b"Not Found\n")
 
