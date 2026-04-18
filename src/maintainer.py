@@ -31,11 +31,32 @@ class CPACodexKeeper:
         )
         self.stats = MaintainerStats()
         self._stats_lock = threading.Lock()
+        self._account_details: dict[str, dict] = {}
+        self._account_details_lock = threading.Lock()
         self.snapshot_writer = snapshot_writer or SnapshotWriter(settings.status_snapshot_path)
 
     def reset_stats(self):
         with self._stats_lock:
             self.stats = MaintainerStats()
+
+    def reset_account_details(self):
+        with self._account_details_lock:
+            self._account_details = {}
+
+    def list_account_details(self):
+        with self._account_details_lock:
+            return [
+                self._account_details[key]
+                for key in sorted(self._account_details, key=lambda item: self._account_details[item]["name"])
+            ]
+
+    def _store_account_detail(self, account_detail):
+        with self._account_details_lock:
+            self._account_details[account_detail["id"]] = account_detail
+
+    def _remove_account_detail(self, name):
+        with self._account_details_lock:
+            self._account_details.pop(name, None)
 
     def blank_line(self):
         self.logger.blank_line()
@@ -106,6 +127,34 @@ class CPACodexKeeper:
             "has_credits": usage.has_credits,
         }
 
+    def build_account_detail(self, name, token_detail, usage_info):
+        secondary_used_percent = None if usage_info is None else usage_info.get("secondary_used_percent")
+        primary_used_percent = 0 if usage_info is None else usage_info.get("primary_used_percent", 0)
+        primary_window_seconds = None if usage_info is None else usage_info.get("primary_window_seconds")
+        secondary_window_seconds = None if usage_info is None else usage_info.get("secondary_window_seconds")
+
+        return {
+            "id": name,
+            "name": token_detail.get("name") or name,
+            "disabled": bool(token_detail.get("disabled", False)),
+            "expires_at": token_detail.get("expired") or None,
+            "quota": {
+                "primary_used_percent": primary_used_percent,
+                "secondary_used_percent": secondary_used_percent,
+                "active_window_label": "week" if secondary_used_percent is not None else "5h",
+                "primary_window": {
+                    "used_percent": primary_used_percent,
+                    "limit_window_seconds": primary_window_seconds,
+                },
+                "secondary_window": None
+                if secondary_used_percent is None
+                else {
+                    "used_percent": secondary_used_percent,
+                    "limit_window_seconds": secondary_window_seconds,
+                },
+            },
+        }
+
     def try_refresh(self, token_data):
         rt = token_data.get("refresh_token")
         if not rt:
@@ -172,11 +221,13 @@ class CPACodexKeeper:
         return self._skip_token("删除失败", logger)
 
     def _handle_invalid_token(self, name, logger):
+        self._remove_account_detail(name)
         return self._delete_token_with_reason(name, "Token 无效或 workspace 已停用，准备删除", logger)
 
     def _apply_non_refreshable_expiry_policy(self, name, token_detail, remaining_seconds, expiry_known, logger):
         if self._has_refresh_token(token_detail) or not expiry_known or remaining_seconds > 0:
             return None
+        self._remove_account_detail(name)
         return self._delete_token_with_reason(name, "Token 已过期且无 Refresh Token，准备删除", logger)
 
     def _handle_non_200_status(self, status, resp_data, logger):
@@ -324,6 +375,7 @@ class CPACodexKeeper:
                 return self._handle_non_200_status(status, resp_data, logger)
 
             body_info = self.parse_usage_info(resp_data)
+            self._store_account_detail(self.build_account_detail(name, token_detail, body_info))
             primary_pct, secondary_pct = self._log_usage_summary(body_info, logger)
             quota_result = self._apply_quota_policy(
                 name,
@@ -356,6 +408,7 @@ class CPACodexKeeper:
 
     def run(self, mode=MODE_ONCE):
         self.reset_stats()
+        self.reset_account_details()
         started_at = self.snapshot_writer.write_started(mode, self.settings.interval_seconds)
         result = RESULT_SUCCESS
         had_worker_exception = False

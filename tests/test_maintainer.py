@@ -71,6 +71,70 @@ class MaintainerTests(unittest.TestCase):
         self.assertEqual(usage.quota_check_percent, 30)
         self.assertEqual(usage.quota_check_label, "5h")
 
+    def test_build_account_detail_pins_contract_shape_and_nullability(self):
+        account_detail = self.maintainer.build_account_detail(
+            "t1",
+            {
+                "name": "t1",
+                "disabled": False,
+                "expired": "2099-01-01T00:00:00Z",
+            },
+            {
+                "primary_used_percent": 15,
+                "primary_window_seconds": 18000,
+                "secondary_used_percent": 80,
+                "secondary_window_seconds": 604800,
+            },
+        )
+
+        self.assertEqual(
+            account_detail,
+            {
+                "id": "t1",
+                "name": "t1",
+                "disabled": False,
+                "expires_at": "2099-01-01T00:00:00Z",
+                "quota": {
+                    "primary_used_percent": 15,
+                    "secondary_used_percent": 80,
+                    "active_window_label": "week",
+                    "primary_window": {"used_percent": 15, "limit_window_seconds": 18000},
+                    "secondary_window": {"used_percent": 80, "limit_window_seconds": 604800},
+                },
+            },
+        )
+
+    def test_build_account_detail_keeps_optional_fields_nullable(self):
+        account_detail = self.maintainer.build_account_detail(
+            "t2",
+            {
+                "disabled": True,
+                "expired": None,
+            },
+            {
+                "primary_used_percent": 44,
+                "primary_window_seconds": 18000,
+                "secondary_used_percent": None,
+                "secondary_window_seconds": None,
+            },
+        )
+
+        self.assertEqual(account_detail["id"], "t2")
+        self.assertEqual(account_detail["name"], "t2")
+        self.assertTrue(account_detail["disabled"])
+        self.assertIsNone(account_detail["expires_at"])
+        self.assertEqual(account_detail["quota"]["primary_used_percent"], 44)
+        self.assertIsNone(account_detail["quota"]["secondary_used_percent"])
+        self.assertEqual(account_detail["quota"]["active_window_label"], "5h")
+        self.assertEqual(account_detail["quota"]["primary_window"], {"used_percent": 44, "limit_window_seconds": 18000})
+        self.assertIsNone(account_detail["quota"]["secondary_window"])
+
+    def test_list_account_details_sorts_by_name(self):
+        self.maintainer._store_account_detail({"id": "b", "name": "Zulu"})
+        self.maintainer._store_account_detail({"id": "a", "name": "Alpha"})
+
+        self.assertEqual(self.maintainer.list_account_details(), [{"id": "a", "name": "Alpha"}, {"id": "b", "name": "Zulu"}])
+
     def test_process_token_deletes_invalid_token_on_401(self):
         self.maintainer.get_token_detail = Mock(return_value={
             "email": "a@example.com",

@@ -61,6 +61,51 @@ class StatusServerTests(unittest.TestCase):
         self.assertEqual(payload["result"], "partial")
         self.assertEqual(payload["summary"]["network_error"], 1)
 
+    def test_accounts_json_returns_contract_payload(self):
+        provider = lambda: [
+            {
+                "id": "acct-01",
+                "name": "Atlas-01",
+                "disabled": False,
+                "expires_at": "2026-05-01T00:00:00Z",
+                "quota": {
+                    "primary_used_percent": 14,
+                    "secondary_used_percent": 22,
+                    "active_window_label": "week",
+                    "primary_window": {"used_percent": 14, "limit_window_seconds": 18000},
+                    "secondary_window": {"used_percent": 22, "limit_window_seconds": 604800},
+                },
+            }
+        ]
+        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path, account_details_provider=provider)
+        self.server.start()
+
+        response = self._get("/api/accounts.json")
+        payload = json.loads(response.read().decode("utf-8"))
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.headers["Content-Type"], "application/json; charset=utf-8")
+        self.assertEqual(
+            payload,
+            {
+                "accounts": [
+                    {
+                        "id": "acct-01",
+                        "name": "Atlas-01",
+                        "disabled": False,
+                        "expires_at": "2026-05-01T00:00:00Z",
+                        "quota": {
+                            "primary_used_percent": 14,
+                            "secondary_used_percent": 22,
+                            "active_window_label": "week",
+                            "primary_window": {"used_percent": 14, "limit_window_seconds": 18000},
+                            "secondary_window": {"used_percent": 22, "limit_window_seconds": 604800},
+                        },
+                    }
+                ]
+            },
+        )
+
     def test_status_html_serves_frontend_index_from_static_dir(self):
         static_dir = pathlib.Path(self.temp_dir.name) / "frontend-dist"
         static_dir.mkdir()
@@ -89,6 +134,20 @@ class StatusServerTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertEqual(response.headers["Content-Type"], "text/css")
         self.assertEqual(body, "body { color: #00ff41; }")
+
+    def test_status_nested_route_serves_frontend_index_from_static_dir(self):
+        static_dir = pathlib.Path(self.temp_dir.name) / "frontend-dist"
+        static_dir.mkdir()
+        (static_dir / "index.html").write_text("<html><body>react status app</body></html>", encoding="utf-8")
+        self.server = StatusServer("127.0.0.1", 0, self.snapshot_path, static_dir=static_dir)
+        self.server.start()
+
+        response = self._get("/status/account")
+        body = response.read().decode("utf-8")
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.headers["Content-Type"], "text/html; charset=utf-8")
+        self.assertIn("react status app", body)
 
     def test_status_server_wait_returns_after_close(self):
         self.server = StatusServer("127.0.0.1", 0, self.snapshot_path)
