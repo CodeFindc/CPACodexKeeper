@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import AccountCard from '../components/AccountCard'
 import { accountPageSizeOptions, normalizeAccountPayload } from '../lib/accountContract'
+
+function GlassCard({ className = '', children }) {
+  return (
+    <div className={`rounded-[28px] border border-white/45 bg-white/48 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.34)] backdrop-blur-2xl ${className}`}>
+      {children}
+    </div>
+  )
+}
 
 const initialState = {
   status: 'loading',
@@ -12,6 +21,7 @@ export default function AccountView() {
   const [pageSize, setPageSize] = useState(12)
   const [pageIndex, setPageIndex] = useState(0)
   const [state, setState] = useState(initialState)
+  const { copy, locale } = useOutletContext()
 
   useEffect(() => {
     let cancelled = false
@@ -40,7 +50,7 @@ export default function AccountView() {
   const totalPages = Math.max(1, Math.ceil(totalAccounts / pageSize))
   const safePageIndex = Math.min(pageIndex, totalPages - 1)
 
-  const { visibleAccounts, rangeStart, rangeEnd } = useMemo(() => {
+  const { visibleAccounts, rangeStart, rangeEnd, disabledCount, enabledCount } = useMemo(() => {
     const start = safePageIndex * pageSize
     const visibleSlice = state.accounts.slice(start, start + pageSize)
 
@@ -48,6 +58,8 @@ export default function AccountView() {
       visibleAccounts: visibleSlice,
       rangeStart: totalAccounts === 0 ? 0 : start + 1,
       rangeEnd: totalAccounts === 0 ? 0 : start + visibleSlice.length,
+      disabledCount: state.accounts.filter((account) => account.disabled).length,
+      enabledCount: state.accounts.filter((account) => !account.disabled).length,
     }
   }, [pageSize, safePageIndex, totalAccounts, state.accounts])
 
@@ -65,144 +77,182 @@ export default function AccountView() {
   }
 
   if (state.status === 'loading') {
-    return <div className="p-8 text-sm uppercase tracking-[0.2em] text-primary">Loading accounts...</div>
+    return <GlassCard className="p-8 text-sm text-slate-700">{copy.shared.loadingAccounts}</GlassCard>
   }
 
   if (state.status === 'error') {
-    return <div className="p-8 text-sm uppercase tracking-[0.2em] text-danger">{state.error}</div>
+    return <GlassCard className="border-rose-200/80 bg-rose-100/70 p-8 text-sm text-rose-700">{state.error}</GlassCard>
   }
 
   return (
-    <div className="space-y-8">
-      <section className="border-l-4 border-primary pl-6">
-        <div className="mb-3 flex items-center gap-3 text-[11px] uppercase tracking-[0.34em] text-primary">
-          <span className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_rgba(0,255,65,0.9)]" />
-          Account Channel Online
+    <div className="space-y-6 lg:space-y-8">
+      <GlassCard className="overflow-hidden p-6 sm:p-8">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/62 px-3 py-1.5 text-slate-700">
+            <span className="h-2.5 w-2.5 rounded-full bg-sky-400 shadow-[0_0_0_5px_rgba(186,230,253,0.45)]" />
+            {copy.account.online}
+          </span>
+          <span className="inline-flex rounded-full border border-white/45 bg-white/58 px-3 py-1.5 text-sm text-slate-700">
+            {copy.account.totalNodes}: {totalAccounts}
+          </span>
         </div>
-        <h1 className="font-display text-4xl font-black uppercase tracking-tight md:text-6xl">Account status overview</h1>
-        <div className="mt-4 max-w-3xl text-sm uppercase tracking-[0.22em] text-muted">
-          Unified account monitoring surface for operator health, routing visibility, and fleet readiness.
-        </div>
-      </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.45fr_0.95fr]">
-        <div className="rounded-sm border border-primary/20 bg-surface p-6 shadow-hud">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-primary/10 pb-4 text-[10px] uppercase tracking-[0.26em] text-muted">
-            <span>ACCOUNT GRID</span>
-            <span className="text-primary">{totalAccounts} TOTAL NODES</span>
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.95fr)] xl:items-start">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 md:text-6xl">{copy.account.title}</h1>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">{copy.account.description}</p>
+            <div className="mt-6 flex flex-wrap gap-3 text-sm text-slate-600">
+              <span className="rounded-full border border-white/45 bg-white/58 px-3 py-2">{copy.account.range}: {rangeStart}-{rangeEnd}</span>
+              <span className="rounded-full border border-white/45 bg-white/58 px-3 py-2">{copy.account.page}: {safePageIndex + 1}/{totalPages}</span>
+              <span className="rounded-full border border-white/45 bg-white/58 px-3 py-2">{copy.account.pageSize}: {pageSize}</span>
+            </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border border-primary/15 bg-surface-strong/30 px-4 py-4 text-[11px] uppercase tracking-[0.22em] text-muted">
-            <div className="space-y-2">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="rounded-[28px] border border-white/40 bg-white/40 p-5 backdrop-blur-2xl">
+              <div className="text-xs text-slate-500">{copy.account.enabledNodes}</div>
+              <div className="mt-3 text-3xl font-semibold tracking-tight text-emerald-700">{enabledCount}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-600">{copy.account.enabledDescription}</div>
+            </div>
+            <div className="rounded-[28px] border border-white/40 bg-white/40 p-5 backdrop-blur-2xl">
+              <div className="text-xs text-slate-500">{copy.account.disabledNodes}</div>
+              <div className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">{disabledCount}</div>
+              <div className="mt-2 text-sm leading-6 text-slate-600">{copy.account.disabledDescription}</div>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)] xl:items-start">
+        <div className="space-y-6">
+          <GlassCard className="p-6 sm:p-7">
+            <div className="flex flex-col gap-5 border-b border-white/40 pb-5 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                RANGE {rangeStart}-{rangeEnd} / {totalAccounts}
+                <h2 className="text-xl font-semibold tracking-tight text-slate-950">{copy.account.gridTitle}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{copy.account.gridDescription}</p>
               </div>
-              <div>
-                PAGE {safePageIndex + 1} / {totalPages}
+              <span className="inline-flex rounded-full border border-white/45 bg-white/58 px-3 py-2 text-sm text-slate-700">
+                {copy.account.visible}: {visibleAccounts.length}
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(260px,0.9fr)]">
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                  <div className="text-xs text-slate-500">{copy.account.range}</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{rangeStart}-{rangeEnd} / {totalAccounts}</div>
+                </div>
+                <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                  <div className="text-xs text-slate-500">{copy.account.page}</div>
+                  <div className="mt-2 text-sm font-medium text-slate-900">{safePageIndex + 1} / {totalPages}</div>
+                </div>
+                <label className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                  <div className="text-xs text-slate-500">{copy.account.pageSize}</div>
+                  <select
+                    aria-label={copy.account.pageSize}
+                    className="mt-2 w-full rounded-2xl border border-white/45 bg-white/72 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-sky-300/70"
+                    value={pageSize}
+                    onChange={handlePageSizeChange}
+                  >
+                    {accountPageSizeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="rounded-[28px] border border-white/38 bg-white/34 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    className="flex items-center justify-between rounded-[22px] border border-white/45 bg-white/66 px-4 py-4 text-left text-sm text-slate-900 transition hover:bg-white/78 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={goToPreviousPage}
+                    disabled={safePageIndex === 0}
+                  >
+                    <span>{copy.shared.previous}</span>
+                    <span className="text-xs text-slate-500">←</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between rounded-[22px] border border-white/45 bg-white/66 px-4 py-4 text-left text-sm text-slate-900 transition hover:bg-white/78 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={goToNextPage}
+                    disabled={safePageIndex >= totalPages - 1}
+                  >
+                    <span>{copy.shared.next}</span>
+                    <span className="text-xs text-slate-500">→</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <label className="flex items-center gap-3">
-              <span>PAGE SIZE</span>
-              <select
-                aria-label="Page size"
-                className="border border-primary/20 bg-surface px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-primary outline-none"
-                value={pageSize}
-                onChange={handlePageSizeChange}
-              >
-                {accountPageSizeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {visibleAccounts.map((account) => (
-              <AccountCard key={account.id} account={account} />
-            ))}
-          </div>
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+              {visibleAccounts.map((account) => (
+                <AccountCard key={account.id} account={account} copy={copy} locale={locale} />
+              ))}
+            </div>
+          </GlassCard>
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-sm border border-primary/20 bg-surface shadow-hud">
-            <div className="flex items-center justify-between border-b border-primary/20 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-primary" />
-                <h2 className="text-sm font-semibold uppercase tracking-[0.28em] text-primary">PAGE CONTROL</h2>
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight text-slate-950">{copy.account.controlsTitle}</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">{copy.account.controlsDescription}</p>
               </div>
-              <span className="text-[10px] uppercase tracking-[0.24em] text-muted">ACCOUNT_NODE</span>
+              <span className="rounded-full border border-white/45 bg-white/56 px-2.5 py-1 text-xs text-slate-700">{copy.account.controlBadge}</span>
             </div>
-            <div className="space-y-4 px-5 py-5 text-[11px] uppercase tracking-[0.24em] text-muted">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between border border-primary/10 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-40"
-                onClick={goToPreviousPage}
-                disabled={safePageIndex === 0}
-              >
-                <span>Previous</span>
-                <span className="text-primary">PAGE_BACK</span>
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between border border-primary/10 px-4 py-3 text-left disabled:cursor-not-allowed disabled:opacity-40"
-                onClick={goToNextPage}
-                disabled={safePageIndex >= totalPages - 1}
-              >
-                <span>Next</span>
-                <span className="text-primary">PAGE_FORWARD</span>
-              </button>
-              <div className="border border-primary/10 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <span>DEFAULT CAPACITY</span>
-                  <span className="text-primary">12</span>
-                </div>
-              </div>
-              <div className="border border-primary/10 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <span>GRID RHYTHM</span>
-                  <span className="text-primary">4*N</span>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="rounded-sm border border-primary/20 bg-surface p-5 shadow-hud text-[11px] uppercase tracking-[0.22em] text-muted">
-            <div className="flex items-center justify-between border-b border-primary/10 pb-4">
-              <span>LIVE SIGNAL</span>
-              <span className="text-primary">HUD_SYNC_STABLE</span>
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                <div className="text-xs text-slate-500">{copy.account.defaultCapacity}</div>
+                <div className="mt-2 text-sm font-medium text-slate-900">12</div>
+              </div>
+              <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                <div className="text-xs text-slate-500">{copy.account.gridRhythm}</div>
+                <div className="mt-2 text-sm font-medium text-slate-900">4*N</div>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between gap-3 border-b border-white/40 pb-4">
+              <span className="text-sm text-slate-600">{copy.account.liveTitle}</span>
+              <span className="rounded-full border border-white/45 bg-white/56 px-2.5 py-1 text-xs text-slate-700">{copy.account.liveBadge}</span>
             </div>
             <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between border border-primary/10 px-3 py-3">
-                <span>ENABLED SURFACE</span>
-                <span className="text-primary">NAME_ONLY</span>
+              <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                <div className="text-xs text-slate-500">{copy.account.liveEnabledSurface}</div>
+                <div className="mt-2 text-sm font-medium text-slate-900">{copy.account.liveEnabledSurfaceValue}</div>
               </div>
-              <div className="flex items-center justify-between border border-primary/10 px-3 py-3">
-                <span>QUOTA TRACKING</span>
-                <span className="text-primary">PRIMARY + ACTIVE WINDOW</span>
+              <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                <div className="text-xs text-slate-500">{copy.account.liveQuotaTracking}</div>
+                <div className="mt-2 text-sm font-medium text-slate-900">{copy.account.liveQuotaTrackingValue}</div>
               </div>
-              <div className="flex items-center justify-between border border-primary/10 px-3 py-3">
-                <span>TOKEN VALIDITY</span>
-                <span className="text-primary">LIVE</span>
+              <div className="rounded-[24px] border border-white/38 bg-white/34 px-4 py-4">
+                <div className="text-xs text-slate-500">{copy.account.liveTokenValidity}</div>
+                <div className="mt-2 text-sm font-medium text-slate-900">{copy.account.liveTokenValidityValue}</div>
               </div>
             </div>
-          </div>
+          </GlassCard>
         </div>
       </section>
 
-      <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-primary/10 pt-4 text-[11px] uppercase tracking-[0.24em] text-muted">
-        <div className="flex flex-wrap gap-6">
-          <span>VIEW: ACCOUNT</span>
-          <span>MODE: LIVE_OVERVIEW</span>
-          <span>VISIBLE: {visibleAccounts.length}</span>
+      <GlassCard className="px-5 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+            <span className="rounded-full border border-white/45 bg-white/56 px-3 py-2">{copy.account.footerView}: {copy.account.footerViewValue}</span>
+            <span className="rounded-full border border-white/45 bg-white/56 px-3 py-2">{copy.account.footerMode}: {copy.account.footerModeValue}</span>
+            <span className="rounded-full border border-white/45 bg-white/56 px-3 py-2">{copy.account.footerVisible}: {visibleAccounts.length}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            <span className="rounded-full border border-white/45 bg-white/56 px-3 py-2">{copy.account.footerReady}</span>
+            <span className="rounded-full border border-white/45 bg-white/56 px-3 py-2">{copy.account.footerStable}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-4 text-primary/70">
-          <span>ACCOUNT_CHANNEL_READY</span>
-          <span>HUD_SYNC_STABLE</span>
-        </div>
-      </footer>
+      </GlassCard>
     </div>
   )
 }
