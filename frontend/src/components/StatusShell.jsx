@@ -1,125 +1,108 @@
-import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
-function createNavItems(copy) {
-  return [
-    { label: copy.shell.navStatus, to: '/' },
-    { label: copy.shell.navAccount, to: '/account' },
-  ]
-}
+const NAV_ITEMS = [
+  { id: 'status', label: 'STATUS', to: '/', icon: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z' },
+  { id: 'account', label: 'ACCOUNT', to: '/account', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.86 0-7 2.24-7 5v1h14v-1c0-2.76-3.14-5-7-5z' },
+]
 
-function getDesktopNavClassName({ isActive }) {
+function topNavClass({ isActive }) {
   return [
-    'rounded-full border px-4 py-2.5 text-sm font-medium transition',
+    'group relative inline-flex items-center gap-2 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] transition-all duration-300',
+    'border',
     isActive
-      ? 'border-sky-300/45 bg-white/60 text-slate-900 shadow-[0_10px_25px_-18px_rgba(15,23,42,0.55)] backdrop-blur-xl'
-      : 'border-white/35 bg-white/22 text-slate-700 hover:border-white/50 hover:bg-white/28',
+      ? 'border-primary/40 bg-primary/10 text-primary shadow-hud'
+      : 'border-white/5 bg-white/[0.025] text-zinc-400 hover:text-zinc-100 hover:border-white/10 hover:bg-white/[0.05]',
   ].join(' ')
 }
 
-function getMobileNavClassName({ isActive }) {
+function bottomNavClass({ isActive }) {
   return [
-    'flex-1 rounded-full px-4 py-3 text-center text-sm font-medium transition',
-    isActive ? 'bg-white/70 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-white/30 hover:text-slate-800',
+    'flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] transition',
+    isActive ? 'bg-primary/10 text-primary shadow-hud' : 'text-zinc-400 hover:text-zinc-100',
   ].join(' ')
 }
 
-export default function StatusShell({ dictionaries }) {
-  const [locale, setLocale] = useState(() => {
-    if (typeof window === 'undefined') {
-      return 'zh'
-    }
-
-    return window.localStorage.getItem('cpacodexkeeper-locale') ?? 'zh'
-  })
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('cpacodexkeeper-locale', locale)
-      window.document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en'
-    }
-  }, [locale])
-
-  const copy = dictionaries[locale] ?? dictionaries.zh
-  const navItems = useMemo(() => createNavItems(copy), [copy])
-
+function NavIcon({ d }) {
   return (
-    <div className="min-h-screen overflow-x-hidden bg-transparent text-slate-900">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.72),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(191,219,254,0.7),_transparent_30%),radial-gradient(circle_at_50%_110%,_rgba(196,181,253,0.34),_transparent_34%)]" />
-      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.35),rgba(255,255,255,0.08))]" />
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="h-3.5 w-3.5">
+      <path d={d} />
+    </svg>
+  )
+}
 
-      <header className="sticky top-0 z-20 px-4 pt-4 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-[28px] border border-white/45 bg-white/46 px-4 py-4 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)] backdrop-blur-2xl sm:px-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/55 bg-[linear-gradient(135deg,rgba(255,255,255,0.72),rgba(191,219,254,0.65))] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-              <div className="h-3 w-3 rounded-full bg-sky-400 shadow-[0_0_0_6px_rgba(186,230,253,0.35)]" />
+export default function StatusShell() {
+  return (
+    <div className="relative min-h-screen overflow-x-hidden text-zinc-100">
+      {/* ambient gradients */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(60% 40% at 15% 0%, rgba(0,241,253,0.18), transparent 60%),' +
+            'radial-gradient(50% 35% at 85% 0%, rgba(0,255,150,0.14), transparent 60%),' +
+            'radial-gradient(60% 40% at 50% 110%, rgba(124,92,255,0.18), transparent 60%)',
+        }}
+      />
+
+      {/* top frame */}
+      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6 sm:pt-5">
+        <div className="glass-panel mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-2xl px-3 py-2.5 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-black/40">
+              <span className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(0,255,150,0.35),transparent_70%)]" />
+              <span className="relative h-2.5 w-2.5 rounded-full bg-primary hud-pulse" />
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-base font-semibold tracking-tight text-slate-900">{copy.shell.productName}</div>
-              <div className="mt-0.5 truncate text-sm text-slate-500">{copy.shell.productSubtitle}</div>
+            <div className="min-w-0 leading-tight">
+              <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.32em] text-primary/80">
+                <span className="hud-glow-primary">CODEX</span>
+                <span className="text-zinc-500">·</span>
+                <span className="text-zinc-400">v4.1</span>
+              </div>
+              <div className="mt-0.5 truncate font-display text-[15px] font-semibold tracking-tight text-zinc-50">
+                CPACodexKeeper
+              </div>
             </div>
           </div>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <nav className="flex items-center gap-2 rounded-full border border-white/35 bg-white/18 p-1.5 backdrop-blur-xl">
-              {navItems.map((item) => (
-                <NavLink key={item.label} to={item.to} end={item.to === '/'} className={getDesktopNavClassName}>
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <div className="flex items-center gap-1 rounded-full border border-white/35 bg-white/20 p-1.5 backdrop-blur-xl">
-              <button
-                type="button"
-                className={`rounded-full px-3 py-2 text-sm font-medium transition ${locale === 'zh' ? 'bg-white/75 text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
-                onClick={() => setLocale('zh')}
-              >
-                {copy.languageToggle.zh}
-              </button>
-              <button
-                type="button"
-                className={`rounded-full px-3 py-2 text-sm font-medium transition ${locale === 'en' ? 'bg-white/75 text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-800'}`}
-                onClick={() => setLocale('en')}
-              >
-                {copy.languageToggle.en}
-              </button>
-            </div>
+          <nav className="hidden items-center gap-2 md:flex">
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.id} to={item.to} end={item.to === '/'} className={topNavClass}>
+                <NavIcon d={item.icon} />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary sm:inline-flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-hud-blink" />
+              LINK · SECURE
+            </span>
+            <span className="hud-mono hidden text-[10px] font-medium text-zinc-500 lg:inline">
+              UPLINK 0x4A·2F
+            </span>
           </div>
         </div>
       </header>
 
-      <main className="relative z-[1] px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-8 lg:pb-12">
+      {/* main canvas */}
+      <main className="relative z-[1] px-3 pb-32 pt-5 sm:px-6 sm:pt-7 lg:px-8 lg:pb-12">
         <div className="mx-auto max-w-7xl">
-          <Outlet context={{ copy, locale }} />
+          <Outlet />
         </div>
       </main>
 
-      <div className="fixed bottom-4 left-4 right-4 z-20 space-y-3 md:hidden">
-        <div className="rounded-[26px] border border-white/40 bg-white/46 p-2 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
-          <div className="flex gap-2">
-            {navItems.map((item) => (
-              <NavLink key={item.label} to={item.to} end={item.to === '/'} className={getMobileNavClassName}>
-                {item.label}
+      {/* mobile bottom dock */}
+      <div className="fixed inset-x-3 bottom-3 z-30 md:hidden">
+        <div className="glass-panel rounded-2xl p-1.5">
+          <div className="flex gap-1">
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.id} to={item.to} end={item.to === '/'} className={bottomNavClass}>
+                <NavIcon d={item.icon} />
+                <span>{item.label}</span>
               </NavLink>
             ))}
-          </div>
-        </div>
-        <div className="rounded-[26px] border border-white/40 bg-white/46 p-2 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className={`flex-1 rounded-full px-4 py-3 text-sm font-medium transition ${locale === 'zh' ? 'bg-white/75 text-slate-900 shadow-sm' : 'text-slate-600'}`}
-              onClick={() => setLocale('zh')}
-            >
-              {copy.languageToggle.zh}
-            </button>
-            <button
-              type="button"
-              className={`flex-1 rounded-full px-4 py-3 text-sm font-medium transition ${locale === 'en' ? 'bg-white/75 text-slate-900 shadow-sm' : 'text-slate-600'}`}
-              onClick={() => setLocale('en')}
-            >
-              {copy.languageToggle.en}
-            </button>
           </div>
         </div>
       </div>

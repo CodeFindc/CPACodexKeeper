@@ -1,86 +1,75 @@
-function formatExpiry(value, fallbackLabel) {
-  if (!value) {
-    return fallbackLabel
-  }
-
+function formatExpiry(value) {
+  if (!value) return 'NO EXPIRY'
   return value.replace('T', ' ').replace('Z', ' UTC')
 }
 
-function getQuotaLabel(quota, locale) {
+function getQuotaLabel(quota) {
   if (quota.activeWindowLabel === 'week' && quota.secondaryUsedPercent !== null) {
-    return locale === 'zh' ? `每周 ${quota.secondaryUsedPercent}%` : `Week ${quota.secondaryUsedPercent}%`
+    return `WEEK · ${quota.secondaryUsedPercent}%`
   }
-
-  return locale === 'zh' ? `5 小时 ${quota.primaryUsedPercent}%` : `5h ${quota.primaryUsedPercent}%`
+  return `5H · ${quota.primaryUsedPercent}%`
 }
 
 function getUsageTone(value) {
   if (value >= 85) {
-    return {
-      badge: 'border-rose-200/80 bg-rose-100/80 text-rose-700',
-      progress: 'bg-rose-400',
-    }
+    return { badge: 'border-danger/40 bg-danger/10 text-danger', bar: 'bg-gradient-to-r from-danger to-rose-300', glow: 'shadow-[0_0_20px_rgba(255,93,108,0.25)]' }
   }
-
   if (value >= 60) {
-    return {
-      badge: 'border-amber-200/80 bg-amber-100/80 text-amber-700',
-      progress: 'bg-amber-400',
-    }
+    return { badge: 'border-warn/40 bg-warn/10 text-warn', bar: 'bg-gradient-to-r from-warn to-yellow-300', glow: '' }
   }
-
-  return {
-    badge: 'border-emerald-200/80 bg-emerald-100/80 text-emerald-700',
-    progress: 'bg-emerald-400',
-  }
+  return { badge: 'border-primary/40 bg-primary/10 text-primary', bar: 'bg-gradient-to-r from-primary to-secondary', glow: 'shadow-hud' }
 }
 
-export default function AccountCard({ account, copy, locale }) {
-  const usageTone = getUsageTone(account.quota.primaryUsedPercent)
-  const statusLabel = account.disabled ? copy.shared.disabled : copy.shared.enabled
-  const statusClassName = account.disabled
-    ? 'border-slate-200/80 bg-slate-100/80 text-slate-700'
-    : 'border-emerald-200/80 bg-emerald-100/80 text-emerald-700'
+export default function AccountCard({ account }) {
+  const tone = getUsageTone(account.quota.primaryUsedPercent)
+  const statusLabel = account.disabled ? 'DISABLED' : 'ENABLED'
+  const statusClass = account.disabled
+    ? 'border-zinc-500/40 bg-zinc-500/10 text-zinc-300'
+    : 'border-primary/40 bg-primary/10 text-primary shadow-hud'
 
   return (
     <article
-      className="group overflow-hidden rounded-[28px] border border-white/45 bg-white/48 p-5 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.34)] backdrop-blur-2xl transition duration-200 hover:bg-white/56"
       data-testid="account-card"
+      className="group relative overflow-hidden rounded-2xl glass-panel p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-hud"
     >
-      <div className="flex items-start justify-between gap-4">
+      {/* corner ticks */}
+      <span className="pointer-events-none absolute left-2 top-2 h-2 w-2 border-l border-t border-primary/40" />
+      <span className="pointer-events-none absolute right-2 top-2 h-2 w-2 border-r border-t border-primary/40" />
+      <span className="pointer-events-none absolute bottom-2 left-2 h-2 w-2 border-b border-l border-primary/40" />
+      <span className="pointer-events-none absolute bottom-2 right-2 h-2 w-2 border-b border-r border-primary/40" />
+
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs text-slate-500">{copy.account.card.node}</div>
-          <h2 className="mt-3 truncate text-xl font-semibold tracking-tight text-slate-950">{account.name}</h2>
+          <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">NODE</div>
+          <h2 className="mt-2 truncate font-display text-lg font-semibold tracking-tight text-zinc-50">{account.name}</h2>
         </div>
-        <span className={`inline-flex shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${statusClassName}`}>
+        <span className={`hud-mono inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${statusClass}`}>
           {statusLabel}
         </span>
       </div>
 
-      <div className="mt-5 rounded-[24px] border border-white/40 bg-white/34 p-4">
-        <div className="mb-3 flex items-center justify-between gap-3 text-sm text-slate-500">
-          <span>{copy.account.card.primaryQuota}</span>
-          <span className={`rounded-full border px-2.5 py-1 text-xs ${usageTone.badge}`}>{account.quota.primaryUsedPercent}%</span>
+      <div className={`mt-4 glass-tile rounded-xl p-3.5 ${tone.glow}`}>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-400">PRIMARY QUOTA</span>
+          <span className={`hud-mono inline-flex rounded-full border px-2 py-0.5 text-[10px] tracking-[0.18em] ${tone.badge}`}>
+            {account.quota.primaryUsedPercent}%
+          </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-slate-200/80">
-          <div className={`h-full rounded-full ${usageTone.progress}`} style={{ width: `${account.quota.primaryUsedPercent}%` }} />
+        <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+          <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${account.quota.primaryUsedPercent}%` }} />
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3">
-        <div className="rounded-[24px] border border-white/35 bg-white/32 px-4 py-3.5">
-          <div className="text-xs text-slate-500">{copy.account.card.status}</div>
-          <div className="mt-2 text-sm font-medium text-slate-900">{statusLabel}</div>
+      <dl className="mt-4 grid gap-2.5">
+        <div className="glass-tile rounded-xl px-3.5 py-3">
+          <dt className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-500">ACTIVE WINDOW</dt>
+          <dd className="mt-1.5 hud-mono text-sm font-medium text-zinc-100">{getQuotaLabel(account.quota)}</dd>
         </div>
-        <div className="rounded-[24px] border border-white/35 bg-white/32 px-4 py-3.5">
-          <div className="text-xs text-slate-500">{copy.account.card.activeWindow}</div>
-          <div className="mt-2 text-sm font-medium text-slate-900">{getQuotaLabel(account.quota, locale)}</div>
+        <div className="glass-tile rounded-xl px-3.5 py-3">
+          <dt className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-500">TOKEN EXPIRY</dt>
+          <dd className="mt-1.5 hud-mono break-words text-xs font-medium text-zinc-100">{formatExpiry(account.expiresAt)}</dd>
         </div>
-        <div className="rounded-[24px] border border-white/35 bg-white/32 px-4 py-3.5">
-          <div className="text-xs text-slate-500">{copy.account.card.tokenExpiry}</div>
-          <div className="mt-2 break-words text-sm font-medium text-slate-900">{formatExpiry(account.expiresAt, copy.shared.noExpiry)}</div>
-        </div>
-      </div>
+      </dl>
     </article>
   )
 }
