@@ -27,7 +27,7 @@ export default function AccountCard({ account }) {
   const tone = getUsageTone(account.quota.primaryUsedPercent)
   const statusLabel = account.disabled ? t('card.disabled') : t('card.enabled')
   const statusClass = account.disabled
-    ? 'border-zinc-500/40 bg-zinc-500/10 text-zinc-300'
+    ? 'border-zinc-500/40 bg-zinc-500/10 text-zinc-700'
     : 'border-primary/40 bg-primary/10 text-primary shadow-hud'
 
   return (
@@ -44,7 +44,7 @@ export default function AccountCard({ account }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('card.node')}</div>
-          <h2 className="mt-2 truncate font-display text-lg font-semibold tracking-tight text-zinc-50">{account.name}</h2>
+          <h2 className="mt-2 truncate font-display text-lg font-semibold tracking-tight text-zinc-900">{account.name}</h2>
         </div>
         <span className={`hud-mono inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${statusClass}`}>
           {statusLabel}
@@ -53,12 +53,12 @@ export default function AccountCard({ account }) {
 
       <div className={`mt-4 glass-tile rounded-xl p-3.5 ${tone.glow}`}>
         <div className="mb-2 flex items-center justify-between">
-          <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-400">{t('card.primaryQuota')}</span>
+          <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-500">{t('card.primaryQuota')}</span>
           <span className={`hud-mono inline-flex rounded-full border px-2 py-0.5 text-[10px] tracking-[0.18em] ${tone.badge}`}>
             {account.quota.primaryUsedPercent}%
           </span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-white/5">
+        <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100">
           <div className={`h-full rounded-full ${tone.bar}`} style={{ width: `${account.quota.primaryUsedPercent}%` }} />
         </div>
       </div>
@@ -66,11 +66,11 @@ export default function AccountCard({ account }) {
       <dl className="mt-4 grid gap-2.5">
         <div className="glass-tile rounded-xl px-3.5 py-3">
           <dt className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-500">{t('card.activeWindow')}</dt>
-          <dd className="mt-1.5 hud-mono text-sm font-medium text-zinc-100">{getQuotaLabel(account.quota)}</dd>
+          <dd className="mt-1.5 hud-mono text-sm font-medium text-zinc-800">{getQuotaLabel(account.quota)}</dd>
         </div>
         <div className="glass-tile rounded-xl px-3.5 py-3">
           <dt className="hud-mono text-[10px] font-semibold uppercase tracking-[0.26em] text-zinc-500">{t('card.tokenExpiry')}</dt>
-          <dd className="mt-1.5 hud-mono break-words text-xs font-medium text-zinc-100">{formatExpiry(account.expiresAt, t('card.noExpiry'))}</dd>
+          <dd className="mt-1.5 hud-mono break-words text-xs font-medium text-zinc-800">{formatExpiry(account.expiresAt, t('card.noExpiry'))}</dd>
         </div>
       </dl>
     </article>

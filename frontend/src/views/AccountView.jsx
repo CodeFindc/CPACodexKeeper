@@ -72,9 +72,9 @@ export default function AccountView() {
 
   if (state.status === 'loading') {
     return (
-      <GlassCard className="flex items-center gap-3 p-8 text-sm text-zinc-300">
+      <GlassCard className="flex items-center gap-3 p-8 text-sm text-zinc-600">
         <span className="h-2 w-2 rounded-full bg-primary hud-pulse" />
-        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-400">Booting account feed...</span>
+        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-500">Booting account feed...</span>
       </GlassCard>
     )
   }
@@ -94,11 +94,11 @@ export default function AccountView() {
         <div className="relative px-5 py-6 sm:px-8 sm:py-8">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-25"
+            className="pointer-events-none absolute inset-0 opacity-60"
             style={{
               background:
-                'radial-gradient(60% 70% at 100% 0%, rgba(124,92,255,0.22), transparent 60%),' +
-                'radial-gradient(40% 60% at 0% 100%, rgba(0,241,253,0.18), transparent 60%)',
+                'radial-gradient(60% 70% at 100% 0%, rgba(124,58,237,0.08), transparent 60%),' +
+                'radial-gradient(40% 60% at 0% 100%, rgba(8,145,178,0.07), transparent 60%)',
             }}
           />
           <div className="relative">
@@ -107,7 +107,7 @@ export default function AccountView() {
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-hud-blink" />
                 {t('account.channelOnline')}
               </span>
-              <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 uppercase tracking-[0.28em] text-zinc-300">
+              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 uppercase tracking-[0.28em] text-zinc-600">
                 {t('account.nodes', { count: totalAccounts })}
               </span>
               <span className="hud-mono ml-auto inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 uppercase tracking-[0.28em] text-secondary hud-glow-secondary">
@@ -119,12 +119,12 @@ export default function AccountView() {
               <div className="glass-tile rounded-2xl p-4">
                 <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.enabledNodes')}</div>
                 <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-primary hud-glow-primary">{enabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-400">{t('account.routableHint')}</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-500">{t('account.routableHint')}</div>
               </div>
               <div className="glass-tile rounded-2xl p-4">
                 <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.disabledNodes')}</div>
-                <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-zinc-100">{disabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-400">{t('account.heldHint')}</div>
+                <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-zinc-800">{disabledCount}</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-500">{t('account.heldHint')}</div>
               </div>
             </div>
           </div>
@@ -134,10 +134,10 @@ export default function AccountView() {
       {/* account grid · full width */}
       <section>
         <GlassCard>
-          <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4 sm:px-6">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2.5">
               <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-hud" />
-              <h2 className="hud-mono text-[11px] font-semibold uppercase tracking-[0.32em] text-zinc-200">{t('account.accountGrid')}</h2>
+              <h2 className="hud-mono text-[11px] font-semibold uppercase tracking-[0.32em] text-zinc-700">{t('account.accountGrid')}</h2>
             </div>
             <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary">
               {t('account.visible', { count: visibleAccounts.length })}
@@ -157,13 +157,13 @@ export default function AccountView() {
         <div className="flex flex-col gap-y-3">
           {/* row 1 · account info */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
+            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-600">
               {t('account.viewAccount')}
             </span>
-            <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
+            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-600">
               {t('account.modeLive')}
             </span>
-            <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
+            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-600">
               {t('account.visiblePill', { count: visibleAccounts.length })}
             </span>
             <span className="hud-mono inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 uppercase tracking-[0.22em] text-primary">
@@ -172,10 +172,10 @@ export default function AccountView() {
           </div>
 
           {/* row 2 · pagination + page size + refresh */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-white/5 pt-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-zinc-200 pt-3">
             {/* left · status pills */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] uppercase tracking-[0.22em] text-zinc-300">
+              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-[11px] uppercase tracking-[0.22em] text-zinc-600">
                 {t('account.range', { start: rangeStart, end: rangeEnd, total: totalAccounts })}
               </span>
               <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary">
@@ -192,7 +192,7 @@ export default function AccountView() {
                   title="Previous page"
                   onClick={goToPreviousPage}
                   disabled={safePageIndex === 0}
-                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-200 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
+                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
                     <polyline points="15 18 9 12 15 6" />
@@ -204,7 +204,7 @@ export default function AccountView() {
                   title="Next page"
                   onClick={goToNextPage}
                   disabled={safePageIndex >= totalPages - 1}
-                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-200 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
+                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
                     <polyline points="9 18 15 12 9 6" />
@@ -212,11 +212,11 @@ export default function AccountView() {
                 </button>
               </div>
 
-              <label className="hud-mono inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-zinc-400 transition hover:border-primary/40 hover:text-primary">
+              <label className="hud-mono inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-zinc-500 transition hover:border-primary/40 hover:text-primary">
                 <span>{t('account.pageSize')}</span>
                 <select
                   aria-label="Page size"
-                  className="rounded-md border border-white/10 bg-black/50 px-1.5 py-0.5 text-xs font-semibold text-zinc-100 outline-none transition focus:border-primary/50 focus:shadow-hud"
+                  className="rounded-md border border-zinc-300 bg-white px-1.5 py-0.5 text-xs font-semibold text-zinc-800 outline-none transition focus:border-primary/50 focus:shadow-hud"
                   value={pageSize}
                   onChange={handlePageSizeChange}
                 >
