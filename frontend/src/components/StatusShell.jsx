@@ -1,8 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useLanguage } from '../i18n'
 
 const NAV_ITEMS = [
-  { id: 'status', label: 'STATUS', to: '/', icon: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z' },
-  { id: 'account', label: 'ACCOUNT', to: '/account', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.86 0-7 2.24-7 5v1h14v-1c0-2.76-3.14-5-7-5z' },
+  { id: 'status', key: 'nav.status', to: '/', icon: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z' },
+  { id: 'account', key: 'nav.account', to: '/account', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.86 0-7 2.24-7 5v1h14v-1c0-2.76-3.14-5-7-5z' },
 ]
 
 function topNavClass({ isActive }) {
@@ -31,6 +32,8 @@ function NavIcon({ d }) {
 }
 
 export default function StatusShell() {
+  const { t, toggleLang } = useLanguage()
+
   return (
     <div className="relative min-h-screen overflow-x-hidden text-zinc-100">
       {/* ambient gradients */}
@@ -69,7 +72,7 @@ export default function StatusShell() {
             {NAV_ITEMS.map((item) => (
               <NavLink key={item.id} to={item.to} end={item.to === '/'} className={topNavClass}>
                 <NavIcon d={item.icon} />
-                <span>{item.label}</span>
+                <span>{t(item.key)}</span>
               </NavLink>
             ))}
           </nav>
@@ -77,11 +80,20 @@ export default function StatusShell() {
           <div className="flex items-center gap-2">
             <span className="hidden items-center gap-2 rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary sm:inline-flex">
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-hud-blink" />
-              LINK · SECURE
+              {t('shell.linkSecure')}
             </span>
             <span className="hud-mono hidden text-[10px] font-medium text-zinc-500 lg:inline">
-              UPLINK 0x4A·2F
+              {t('shell.uplink')}
             </span>
+            <button
+              type="button"
+              onClick={toggleLang}
+              title={t('shell.langToggleHint')}
+              aria-label={t('shell.langToggleHint')}
+              className="hud-mono inline-flex h-8 min-w-[40px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+            >
+              {t('shell.langToggle')}
+            </button>
           </div>
         </div>
       </header>
@@ -100,7 +112,7 @@ export default function StatusShell() {
             {NAV_ITEMS.map((item) => (
               <NavLink key={item.id} to={item.to} end={item.to === '/'} className={bottomNavClass}>
                 <NavIcon d={item.icon} />
-                <span>{item.label}</span>
+                <span>{t(item.key)}</span>
               </NavLink>
             ))}
           </div>
