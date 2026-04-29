@@ -12,14 +12,14 @@ function topNavClass({ isActive }) {
     'border',
     isActive
       ? 'border-primary/40 bg-primary/10 text-primary shadow-hud'
-      : 'border-white/5 bg-white/[0.025] text-zinc-400 hover:text-zinc-100 hover:border-white/10 hover:bg-white/[0.05]',
+      : 'border-zinc-200 bg-white text-zinc-700 hover:text-zinc-800 hover:border-zinc-300 hover:bg-zinc-100',
   ].join(' ')
 }
 
 function bottomNavClass({ isActive }) {
   return [
     'flex flex-1 flex-col items-center justify-center gap-1 rounded-2xl py-2.5 text-[10px] font-semibold uppercase tracking-[0.22em] transition',
-    isActive ? 'bg-primary/10 text-primary shadow-hud' : 'text-zinc-400 hover:text-zinc-100',
+    isActive ? 'bg-primary/10 text-primary shadow-hud' : 'text-zinc-700 hover:text-zinc-800',
   ].join(' ')
 }
 
@@ -35,16 +35,16 @@ export default function StatusShell() {
   const { t, toggleLang } = useLanguage()
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden text-zinc-100">
+    <div className="relative min-h-screen overflow-x-hidden text-zinc-800">
       {/* ambient gradients */}
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 -z-10"
         style={{
           background:
-            'radial-gradient(60% 40% at 15% 0%, rgba(0,241,253,0.18), transparent 60%),' +
-            'radial-gradient(50% 35% at 85% 0%, rgba(0,255,150,0.14), transparent 60%),' +
-            'radial-gradient(60% 40% at 50% 110%, rgba(124,92,255,0.18), transparent 60%)',
+            'radial-gradient(60% 40% at 15% 0%, rgba(8,145,178,0.07), transparent 60%),' +
+            'radial-gradient(50% 35% at 85% 0%, rgba(16,185,129,0.06), transparent 60%),' +
+            'radial-gradient(60% 40% at 50% 110%, rgba(124,58,237,0.06), transparent 60%)',
         }}
       />
 
@@ -52,17 +52,17 @@ export default function StatusShell() {
       <header className="sticky top-0 z-30 px-3 pt-3 sm:px-6 sm:pt-5">
         <div className="glass-panel mx-auto flex max-w-7xl items-center justify-between gap-4 rounded-2xl px-3 py-2.5 sm:px-5">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-black/40">
-              <span className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(0,255,150,0.35),transparent_70%)]" />
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-primary/30 bg-zinc-50/60">
+              <span className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.18),transparent_70%)]" />
               <span className="relative h-2.5 w-2.5 rounded-full bg-primary hud-pulse" />
             </div>
             <div className="min-w-0 leading-tight">
               <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.32em] text-primary/80">
                 <span className="hud-glow-primary">CODEX</span>
                 <span className="text-zinc-500">·</span>
-                <span className="text-zinc-400">v4.1</span>
+                <span className="text-zinc-700">v4.1</span>
               </div>
-              <div className="mt-0.5 truncate font-display text-[15px] font-semibold tracking-tight text-zinc-50">
+              <div className="mt-0.5 truncate font-display text-[15px] font-semibold tracking-tight text-zinc-900">
                 CPACodexKeeper
               </div>
             </div>
@@ -90,7 +90,7 @@ export default function StatusShell() {
               onClick={toggleLang}
               title={t('shell.langToggleHint')}
               aria-label={t('shell.langToggleHint')}
-              className="hud-mono inline-flex h-8 min-w-[40px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-300 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+              className="hud-mono inline-flex h-8 min-w-[40px] items-center justify-center rounded-full border border-zinc-300 bg-white px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-zinc-600 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
             >
               {t('shell.langToggle')}
             </button>

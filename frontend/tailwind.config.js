@@ -3,20 +3,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#05070a',
-        surface: '#0c1015',
-        'surface-strong': '#11161d',
-        primary: '#00ff96',
-        secondary: '#00f1fd',
-        accent: '#7c5cff',
-        danger: '#ff5d6c',
-        warn: '#ffb547',
-        muted: '#7d8a98',
+        background: '#f5f6f8',
+        surface: '#ffffff',
+        'surface-strong': '#eef0f3',
+        primary: '#10b981',
+        secondary: '#0891b2',
+        accent: '#7c3aed',
+        danger: '#dc2626',
+        warn: '#d97706',
+        muted: '#71717a',
       },
       boxShadow: {
-        hud: '0 0 22px rgba(0, 255, 150, 0.22)',
-        'hud-cyan': '0 0 22px rgba(0, 241, 253, 0.22)',
-        glass: '0 30px 60px -40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255,255,255,0.06)',
+        hud: '0 4px 18px -6px rgba(16, 185, 129, 0.35)',
+        'hud-cyan': '0 4px 18px -6px rgba(8, 145, 178, 0.35)',
+        glass: '0 1px 0 rgba(255,255,255,1) inset, 0 12px 28px -18px rgba(15, 23, 42, 0.18), 0 2px 6px -2px rgba(15, 23, 42, 0.06)',
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
@@ -25,7 +25,7 @@ export default {
       },
       backgroundImage: {
         'grid-mesh':
-          'linear-gradient(rgba(0,255,150,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,150,0.06) 1px, transparent 1px)',
+          'linear-gradient(rgba(15,23,42,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.04) 1px, transparent 1px)',
       },
       keyframes: {
         'hud-blink': {
