@@ -3,45 +3,66 @@
 @tailwind utilities;
 
 :root {
-  color: #0f172a;
-  background: #dbeafe;
-  font-family: Inter, 'Segoe UI', system-ui, sans-serif;
-  color-scheme: light;
+  color: #e6f4ec;
+  background: #05070a;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 html {
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.95), transparent 34%),
-    radial-gradient(circle at top right, rgba(191, 219, 254, 0.92), transparent 30%),
-    radial-gradient(circle at 50% 100%, rgba(216, 180, 254, 0.42), transparent 34%),
-    linear-gradient(180deg, #ecf5ff 0%, #dbeafe 52%, #e9d5ff 100%);
+    radial-gradient(circle at 12% 8%, rgba(0, 241, 253, 0.18), transparent 38%),
+    radial-gradient(circle at 92% 6%, rgba(0, 255, 65, 0.14), transparent 36%),
+    radial-gradient(circle at 50% 110%, rgba(120, 87, 255, 0.22), transparent 42%),
+    linear-gradient(180deg, #05070a 0%, #07090f 55%, #04060a 100%);
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top, rgba(255, 255, 255, 0.72), transparent 36%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02)),
-    transparent;
-  color: #0f172a;
+  color: #e6f4ec;
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'cv11', 'ss01';
+  letter-spacing: 0.005em;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* subtle scanline + grid mesh overlay for the HUD ambience */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.32), transparent 22%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.18), transparent 48%);
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 145, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 145, 0.04) 1px, transparent 1px);
+  background-size: 56px 56px, 56px 56px;
+  mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.85), transparent 75%);
+  -webkit-mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.85), transparent 75%);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.012) 0px,
+    rgba(255, 255, 255, 0.012) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.6;
 }
 
 a {
@@ -54,10 +75,62 @@ select {
 }
 
 #root {
+  position: relative;
+  z-index: 1;
   min-height: 100vh;
 }
 
 ::selection {
-  background: rgba(96, 165, 250, 0.28);
-  color: #0f172a;
+  background: rgba(0, 241, 253, 0.32);
+  color: #ffffff;
+}
+
+/* glass utility helpers */
+.glass-panel {
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015) 55%, rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 30px 60px -40px rgba(0, 0, 0, 0.7);
+}
+
+.glass-tile {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+}
+
+.hud-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.04em;
+}
+
+.hud-glow-primary {
+  text-shadow: 0 0 12px rgba(0, 255, 65, 0.45), 0 0 28px rgba(0, 255, 65, 0.18);
+}
+
+.hud-glow-secondary {
+  text-shadow: 0 0 10px rgba(0, 241, 253, 0.45), 0 0 24px rgba(0, 241, 253, 0.18);
+}
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(0, 255, 65, 0.55); }
+  70%  { box-shadow: 0 0 0 10px rgba(0, 255, 65, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 255, 65, 0); }
+}
+
+.hud-pulse {
+  animation: pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* dark-themed scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 241, 253, 0.35), rgba(0, 255, 65, 0.25));
+  border-radius: 999px;
 }
