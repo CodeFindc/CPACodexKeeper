@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AccountCard from '../components/AccountCard'
+import { useT } from '../i18n'
 import { accountPageSizeOptions, normalizeAccountPayload } from '../lib/accountContract'
 
 function GlassCard({ className = '', children }) {
@@ -9,6 +10,7 @@ function GlassCard({ className = '', children }) {
 const initialState = { status: 'loading', accounts: [], error: null }
 
 export default function AccountView() {
+  const t = useT()
   const [pageSize, setPageSize] = useState(12)
   const [pageIndex, setPageIndex] = useState(0)
   const [state, setState] = useState(initialState)
@@ -103,26 +105,26 @@ export default function AccountView() {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className="hud-mono inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 uppercase tracking-[0.28em] text-primary shadow-hud">
                 <span className="h-1.5 w-1.5 rounded-full bg-primary animate-hud-blink" />
-                CHANNEL · ONLINE
+                {t('account.channelOnline')}
               </span>
               <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 uppercase tracking-[0.28em] text-zinc-300">
-                NODES · {totalAccounts}
+                {t('account.nodes', { count: totalAccounts })}
               </span>
               <span className="hud-mono ml-auto inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1 uppercase tracking-[0.28em] text-secondary hud-glow-secondary">
-                Account status overview
+                {t('account.statusOverview')}
               </span>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="glass-tile rounded-2xl p-4">
-                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">ENABLED NODES</div>
+                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.enabledNodes')}</div>
                 <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-primary hud-glow-primary">{enabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-400">Currently routable accounts.</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-400">{t('account.routableHint')}</div>
               </div>
               <div className="glass-tile rounded-2xl p-4">
-                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">DISABLED NODES</div>
+                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.disabledNodes')}</div>
                 <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-zinc-100">{disabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-400">Held out of rotation.</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-400">{t('account.heldHint')}</div>
               </div>
             </div>
           </div>
@@ -135,10 +137,10 @@ export default function AccountView() {
           <div className="flex items-center justify-between gap-3 border-b border-white/5 px-5 py-4 sm:px-6">
             <div className="flex items-center gap-2.5">
               <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-hud" />
-              <h2 className="hud-mono text-[11px] font-semibold uppercase tracking-[0.32em] text-zinc-200">ACCOUNT GRID</h2>
+              <h2 className="hud-mono text-[11px] font-semibold uppercase tracking-[0.32em] text-zinc-200">{t('account.accountGrid')}</h2>
             </div>
             <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary">
-              VISIBLE · {visibleAccounts.length}
+              {t('account.visible', { count: visibleAccounts.length })}
             </span>
           </div>
 
@@ -156,16 +158,16 @@ export default function AccountView() {
           {/* row 1 · account info */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              VIEW · ACCOUNT
+              {t('account.viewAccount')}
             </span>
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              MODE · LIVE OVERVIEW
+              {t('account.modeLive')}
             </span>
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              VISIBLE · {visibleAccounts.length}
+              {t('account.visiblePill', { count: visibleAccounts.length })}
             </span>
             <span className="hud-mono inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 uppercase tracking-[0.22em] text-primary">
-              NODES · {totalAccounts}
+              {t('account.nodesPill', { count: totalAccounts })}
             </span>
           </div>
 
@@ -174,10 +176,10 @@ export default function AccountView() {
             {/* left · status pills */}
             <div className="flex flex-wrap items-center gap-2">
               <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[11px] uppercase tracking-[0.22em] text-zinc-300">
-                {`RANGE ${rangeStart}-${rangeEnd} / ${totalAccounts}`}
+                {t('account.range', { start: rangeStart, end: rangeEnd, total: totalAccounts })}
               </span>
               <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-secondary">
-                {`PAGE ${safePageIndex + 1} / ${totalPages}`}
+                {t('account.page', { current: safePageIndex + 1, total: totalPages })}
               </span>
             </div>
 
@@ -211,7 +213,7 @@ export default function AccountView() {
               </div>
 
               <label className="hud-mono inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-zinc-400 transition hover:border-primary/40 hover:text-primary">
-                <span>PAGE SIZE</span>
+                <span>{t('account.pageSize')}</span>
                 <select
                   aria-label="Page size"
                   className="rounded-md border border-white/10 bg-black/50 px-1.5 py-0.5 text-xs font-semibold text-zinc-100 outline-none transition focus:border-primary/50 focus:shadow-hud"

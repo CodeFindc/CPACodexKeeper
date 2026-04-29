@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useT } from '../i18n'
 
 export function formatTimestamp(value, fallback = 'N/A') {
   if (!value) return fallback
@@ -73,7 +74,7 @@ function StatCard({ label, value, accent = 'primary', subtitle, progressWidth = 
   )
 }
 
-function TelemetryBar({ label, value, total, tone = 'primary' }) {
+function TelemetryBar({ label, value, total, tone = 'primary', valueLabel, totalLabel }) {
   const a = getAccent(tone)
   const percent = total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0
   return (
@@ -86,8 +87,8 @@ function TelemetryBar({ label, value, total, tone = 'primary' }) {
         <div className={`h-full rounded-full ${a.bar}`} style={{ width: `${percent}%` }} />
       </div>
       <div className="mt-1.5 flex justify-between text-[10px] text-zinc-500">
-        <span>VALUE {value}</span>
-        <span>TOTAL {total}</span>
+        <span>{valueLabel} {value}</span>
+        <span>{totalLabel} {total}</span>
       </div>
     </div>
   )
@@ -110,6 +111,7 @@ function LogRow({ label, value, status }) {
 const initialState = { status: 'loading', payload: null, error: null }
 
 export default function StatusView() {
+  const t = useT()
   const [state, setState] = useState(initialState)
 
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function StatusView() {
     return (
       <GlassCard className="flex items-center gap-3 p-8 text-sm text-zinc-300">
         <span className="h-2 w-2 rounded-full bg-primary hud-pulse" />
-        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-400">Booting status feed...</span>
+        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-400">{t('status.bootingFeed')}</span>
       </GlassCard>
     )
   }
@@ -141,7 +143,7 @@ export default function StatusView() {
   if (state.status === 'error') {
     return (
       <GlassCard className="border border-danger/40 p-8 text-sm text-danger hud-mono uppercase tracking-[0.2em]">
-        ERROR · {state.error}
+        {t('status.error', { message: state.error })}
       </GlassCard>
     )
   }
@@ -152,7 +154,7 @@ export default function StatusView() {
   }
 
   const tone = getResultTone(payload.result, payload.state)
-  const tickerStatus = payload.message ? 'NOTICE' : 'STANDBY'
+  const tickerStatus = payload.message ? t('common.notice') : t('common.standby')
 
   const logRows = [
     ['STARTED_AT', formatTimestamp(payload.started_at), 'INIT_OK'],
@@ -183,7 +185,7 @@ export default function StatusView() {
             <div className="flex flex-wrap items-center gap-2 text-xs">
               <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 hud-mono uppercase tracking-[0.28em] ${tone.chip} ${tone.glow}`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${tone.dot} animate-hud-blink`} />
-                LIVE
+                {t('common.live')}
               </span>
               <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 uppercase tracking-[0.28em] text-zinc-400">
                 CH · {payload.code ?? 'NO_CODE'}
@@ -195,31 +197,23 @@ export default function StatusView() {
 
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.95fr)] xl:items-start">
               <div>
-                <h1 className="font-display text-3xl font-semibold tracking-tight text-zinc-50 sm:text-4xl md:text-5xl">
-                  CPACodexKeeper status
-                  <span className="ml-2 hud-mono text-base font-medium uppercase tracking-[0.22em] text-primary hud-glow-primary sm:text-lg">
-                    · {payload.state}
-                  </span>
-                </h1>
-                <p className="mt-4 max-w-3xl text-sm leading-6 text-zinc-400 sm:text-base">
-                  Realtime telemetry from the Codex daemon. Watch the signal, refresh cadence, and account fleet at a glance.
-                </p>
+                <h1 className="sr-only">CPACodexKeeper status · {payload.state}</h1>
 
-                <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">UPDATED</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.updated')}</div>
                     <div className="mt-1.5 text-xs text-zinc-200">{formatTimestamp(payload.updated_at)}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">STARTED</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.started')}</div>
                     <div className="mt-1.5 text-xs text-zinc-200">{formatTimestamp(payload.started_at)}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">INTERVAL</div>
-                    <div className="mt-1.5 text-xs text-zinc-200">{payload.interval_seconds ?? 'N/A'}s</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.interval')}</div>
+                    <div className="mt-1.5 text-xs text-zinc-200">{t('status.intervalSeconds', { value: payload.interval_seconds ?? 'N/A' })}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">RESULT</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.result')}</div>
                     <div className={`mt-1.5 text-xs font-semibold ${tone.chip.split(' ').slice(-1)[0]}`}>{String(payload.result).toUpperCase()}</div>
                   </div>
                 </div>
@@ -227,20 +221,20 @@ export default function StatusView() {
 
               <div className="glass-tile rounded-2xl p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-400">SIGNAL</span>
+                  <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-400">{t('status.signal')}</span>
                   <span className={`hud-mono inline-flex rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.22em] ${tone.chip}`}>
                     {tickerStatus}
                   </span>
                 </div>
                 <div className="mt-4 grid gap-4">
                   <div>
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">LAST FINISH</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.lastFinish')}</div>
                     <div className="mt-1 text-sm text-zinc-100">{formatTimestamp(payload.finished_at)}</div>
                   </div>
                   <div>
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">CURRENT NOTICE</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.currentNotice')}</div>
                     <div className="mt-1 break-words text-sm leading-6 text-zinc-100">
-                      {payload.message ?? 'Awaiting next refresh...'}
+                      {payload.message ?? t('status.awaiting')}
                     </div>
                   </div>
                 </div>
@@ -252,26 +246,26 @@ export default function StatusView() {
 
       {/* stat grid */}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="TOTAL" value={summary.total} subtitle="All account objects" cellId="CELL_01" progressWidth="100%" />
-        <StatCard label="HEALTHY" value={summary.alive} subtitle="Available right now" cellId="CELL_02" accent="cyan" progressWidth={summary.total ? `${Math.round((summary.alive / summary.total) * 100)}%` : '0%'} />
-        <StatCard label="OFFLINE" value={summary.dead} subtitle="Currently unavailable" accent="danger" cellId="CELL_03" progressWidth={summary.total ? `${Math.round((summary.dead / summary.total) * 100)}%` : '0%'} />
-        <StatCard label="DISABLED" value={summary.disabled} subtitle="Excluded from rotation" accent="warning" cellId="CELL_04" progressWidth={summary.total ? `${Math.round((summary.disabled / summary.total) * 100)}%` : '0%'} />
+        <StatCard label={t('stat.total')} value={summary.total} subtitle={t('stat.totalSubtitle')} cellId="CELL_01" progressWidth="100%" />
+        <StatCard label={t('stat.healthy')} value={summary.alive} subtitle={t('stat.healthySubtitle')} cellId="CELL_02" accent="cyan" progressWidth={summary.total ? `${Math.round((summary.alive / summary.total) * 100)}%` : '0%'} />
+        <StatCard label={t('stat.offline')} value={summary.dead} subtitle={t('stat.offlineSubtitle')} accent="danger" cellId="CELL_03" progressWidth={summary.total ? `${Math.round((summary.dead / summary.total) * 100)}%` : '0%'} />
+        <StatCard label={t('stat.disabled')} value={summary.disabled} subtitle={t('stat.disabledSubtitle')} accent="warning" cellId="CELL_04" progressWidth={summary.total ? `${Math.round((summary.disabled / summary.total) * 100)}%` : '0%'} />
       </section>
 
       {/* telemetry + activity + logs */}
       <section className="grid gap-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.4fr)]">
         <div className="space-y-5">
           <GlassCard>
-            <SectionHeader title="SYSTEM TELEMETRY" badge="FLOW_RATE_V2" badgeTone="cyan" />
+            <SectionHeader title={t('status.systemTelemetry')} badge="FLOW_RATE_V2" badgeTone="cyan" />
             <div className="space-y-3 px-5 py-5 sm:px-6">
-              <TelemetryBar label="REFRESHED" value={summary.refreshed} total={summary.total} tone="primary" />
-              <TelemetryBar label="SKIPPED" value={summary.skipped} total={summary.total} tone="warning" />
-              <TelemetryBar label="NETWORK ERROR" value={summary.network_error} total={summary.total} tone="danger" />
+              <TelemetryBar label={t('status.refreshed')} value={summary.refreshed} total={summary.total} tone="primary" valueLabel={t('telemetry.value')} totalLabel={t('telemetry.total')} />
+              <TelemetryBar label={t('status.skipped')} value={summary.skipped} total={summary.total} tone="warning" valueLabel={t('telemetry.value')} totalLabel={t('telemetry.total')} />
+              <TelemetryBar label={t('status.networkError')} value={summary.network_error} total={summary.total} tone="danger" valueLabel={t('telemetry.value')} totalLabel={t('telemetry.total')} />
             </div>
           </GlassCard>
 
           <GlassCard>
-            <SectionHeader title="ACTIVITY GRID" badge="GRID_SCAN_24" badgeTone="accent" />
+            <SectionHeader title={t('status.activityGrid')} badge="GRID_SCAN_24" badgeTone="accent" />
             <div className="grid grid-cols-6 gap-2 px-5 py-5 sm:px-6">
               {Array.from({ length: 24 }, (_, index) => {
                 const active = index % 5 === 0
@@ -294,14 +288,14 @@ export default function StatusView() {
         </div>
 
         <GlassCard className="overflow-hidden">
-          <SectionHeader title="CHRONICLE LOGS" badge="TRACE_MATRIX" badgeTone="primary" />
+          <SectionHeader title={t('status.chronicleLogs')} badge="TRACE_MATRIX" badgeTone="primary" />
           <div className="overflow-auto">
             <table className="w-full min-w-[560px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">PARAMETER</th>
-                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">VALUE</th>
-                  <th className="hud-mono px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">STATE</th>
+                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.parameter')}</th>
+                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.value')}</th>
+                  <th className="hud-mono px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.state')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -315,7 +309,7 @@ export default function StatusView() {
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-0.5 font-semibold uppercase tracking-[0.22em] text-zinc-400">
               TRACE_OK
             </span>
-            <span className="hud-mono uppercase tracking-[0.22em] text-zinc-500">{logRows.length} entries · last sync {formatTimestamp(payload.updated_at)}</span>
+            <span className="hud-mono uppercase tracking-[0.22em] text-zinc-500">{t('status.entries', { count: logRows.length, time: formatTimestamp(payload.updated_at) })}</span>
           </div>
         </GlassCard>
       </section>
@@ -325,13 +319,13 @@ export default function StatusView() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              LOCAL TIME: <span className="ml-1 text-zinc-100">{localTime}</span>
+              {t('status.localTime')} <span className="ml-1 text-zinc-100">{localTime}</span>
             </span>
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              INTERVAL · {payload.interval_seconds ?? 'N/A'}s
+              {t('status.intervalPill', { value: payload.interval_seconds ?? 'N/A' })}
             </span>
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-300">
-              ENABLED · {summary.enabled}
+              {t('status.enabledPill', { count: summary.enabled })}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -342,7 +336,7 @@ export default function StatusView() {
               SYS_FOOTER_LINK
             </span>
             <span className="hud-mono inline-flex rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-400">
-              UI · v4.1.0
+              {t('status.uiVersion')}
             </span>
           </div>
         </div>
