@@ -59,7 +59,7 @@ export default function StatusShell() {
             <div className="min-w-0 leading-tight">
               <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.32em] text-primary/80">
                 <span className="hud-glow-primary">CODEX</span>
-                <span className="text-zinc-500">·</span>
+                <span className="text-zinc-600">·</span>
                 <span className="text-zinc-700">v4.1</span>
               </div>
               <div className="mt-0.5 truncate font-display text-[15px] font-semibold tracking-tight text-zinc-900">
@@ -82,7 +82,7 @@ export default function StatusShell() {
               <span className="h-1.5 w-1.5 rounded-full bg-primary animate-hud-blink" />
               {t('shell.linkSecure')}
             </span>
-            <span className="hud-mono hidden text-[10px] font-medium text-zinc-500 lg:inline">
+            <span className="hud-mono hidden text-[10px] font-medium text-zinc-600 lg:inline">
               {t('shell.uplink')}
             </span>
             <button

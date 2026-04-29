@@ -3,10 +3,11 @@
 @tailwind utilities;
 
 :root {
-  color: #1f2937;
+  color: #111827;
   background: #f5f6f8;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   color-scheme: light;
+  text-rendering: optimizeLegibility;
 }
 
 html {
@@ -21,12 +22,14 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  color: #1f2937;
+  color: #111827;
   background: transparent;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* On light backgrounds (esp. Windows ClearType) subpixel AA renders sharper than grayscale antialiasing. */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+  text-rendering: optimizeLegibility;
   font-feature-settings: 'cv11', 'ss01';
-  letter-spacing: 0.005em;
+  letter-spacing: 0;
 }
 
 * {
@@ -41,11 +44,11 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background-image:
-    linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
-  background-size: 56px 56px, 56px 56px;
-  mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.6), transparent 78%);
-  -webkit-mask-image: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.6), transparent 78%);
+    linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px, 64px 64px;
+  mask-image: radial-gradient(circle at 50% 25%, rgba(0, 0, 0, 0.45), transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 50% 25%, rgba(0, 0, 0, 0.45), transparent 70%);
 }
 
 body::after {
@@ -93,15 +96,17 @@ select {
 
 .hud-mono {
   font-family: 'JetBrains Mono', 'Fira Code', 'Space Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  font-feature-settings: 'zero', 'ss02';
 }
 
+/* On light bg, text-shadow blurs glyph edges — drop the shadow and just keep a slightly bolder weight for emphasis. */
 .hud-glow-primary {
-  text-shadow: 0 0 8px rgba(16, 185, 129, 0.25);
+  font-weight: 700;
 }
 
 .hud-glow-secondary {
-  text-shadow: 0 0 8px rgba(8, 145, 178, 0.25);
+  font-weight: 700;
 }
 
 @keyframes pulse-ring {

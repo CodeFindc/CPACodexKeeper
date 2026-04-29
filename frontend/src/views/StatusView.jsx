@@ -60,13 +60,13 @@ function StatCard({ label, value, accent = 'primary', subtitle, progressWidth = 
   return (
     <GlassCard className="p-5">
       <div className="flex items-start justify-between gap-3">
-        <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-zinc-500">{label}</span>
+        <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.3em] text-zinc-600">{label}</span>
         {cellId ? (
           <span className={`hud-mono inline-flex rounded-full border px-2 py-0.5 text-[10px] tracking-[0.18em] ${a.badge}`}>{cellId}</span>
         ) : null}
       </div>
       <div className={`mt-5 font-display text-5xl font-semibold tracking-tight sm:text-6xl ${a.value}`}>{value}</div>
-      {subtitle ? <div className="mt-2 text-xs leading-5 text-zinc-500">{subtitle}</div> : null}
+      {subtitle ? <div className="mt-2 text-xs leading-5 text-zinc-600">{subtitle}</div> : null}
       <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-zinc-100">
         <div className={`h-full rounded-full ${a.bar}`} style={{ width: progressWidth }} />
       </div>
@@ -86,7 +86,7 @@ function TelemetryBar({ label, value, total, tone = 'primary', valueLabel, total
       <div className="h-1.5 overflow-hidden rounded-full bg-zinc-100">
         <div className={`h-full rounded-full ${a.bar}`} style={{ width: `${percent}%` }} />
       </div>
-      <div className="mt-1.5 flex justify-between text-[10px] text-zinc-500">
+      <div className="mt-1.5 flex justify-between text-[10px] text-zinc-600">
         <span>{valueLabel} {value}</span>
         <span>{totalLabel} {total}</span>
       </div>
@@ -97,7 +97,7 @@ function TelemetryBar({ label, value, total, tone = 'primary', valueLabel, total
 function LogRow({ label, value, status }) {
   return (
     <tr className="border-b border-zinc-200 last:border-b-0">
-      <td className="px-4 py-3 text-xs text-zinc-500 hud-mono uppercase tracking-[0.2em]">{label}</td>
+      <td className="px-4 py-3 text-xs text-zinc-600 hud-mono uppercase tracking-[0.2em]">{label}</td>
       <td className="px-4 py-3 text-sm text-zinc-700">{value}</td>
       <td className="px-4 py-3 text-right">
         <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-secondary">
@@ -135,7 +135,7 @@ export default function StatusView() {
     return (
       <GlassCard className="flex items-center gap-3 p-8 text-sm text-zinc-600">
         <span className="h-2 w-2 rounded-full bg-primary hud-pulse" />
-        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-500">{t('status.bootingFeed')}</span>
+        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-600">{t('status.bootingFeed')}</span>
       </GlassCard>
     )
   }
@@ -187,10 +187,10 @@ export default function StatusView() {
                 <span className={`h-1.5 w-1.5 rounded-full ${tone.dot} animate-hud-blink`} />
                 {t('common.live')}
               </span>
-              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 uppercase tracking-[0.28em] text-zinc-500">
+              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 uppercase tracking-[0.28em] text-zinc-600">
                 CH · {payload.code ?? 'NO_CODE'}
               </span>
-              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 uppercase tracking-[0.28em] text-zinc-500">
+              <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1 uppercase tracking-[0.28em] text-zinc-600">
                 MODE · {payload.mode}
               </span>
             </div>
@@ -201,19 +201,19 @@ export default function StatusView() {
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.updated')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.updated')}</div>
                     <div className="mt-1.5 text-xs text-zinc-700">{formatTimestamp(payload.updated_at)}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.started')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.started')}</div>
                     <div className="mt-1.5 text-xs text-zinc-700">{formatTimestamp(payload.started_at)}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.interval')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.interval')}</div>
                     <div className="mt-1.5 text-xs text-zinc-700">{t('status.intervalSeconds', { value: payload.interval_seconds ?? 'N/A' })}</div>
                   </div>
                   <div className="glass-tile rounded-xl px-3 py-3">
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.result')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.result')}</div>
                     <div className={`mt-1.5 text-xs font-semibold ${tone.chip.split(' ').slice(-1)[0]}`}>{String(payload.result).toUpperCase()}</div>
                   </div>
                 </div>
@@ -221,18 +221,18 @@ export default function StatusView() {
 
               <div className="glass-tile rounded-2xl p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('status.signal')}</span>
+                  <span className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-600">{t('status.signal')}</span>
                   <span className={`hud-mono inline-flex rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.22em] ${tone.chip}`}>
                     {tickerStatus}
                   </span>
                 </div>
                 <div className="mt-4 grid gap-4">
                   <div>
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.lastFinish')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.lastFinish')}</div>
                     <div className="mt-1 text-sm text-zinc-800">{formatTimestamp(payload.finished_at)}</div>
                   </div>
                   <div>
-                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-500">{t('status.currentNotice')}</div>
+                    <div className="hud-mono text-[10px] uppercase tracking-[0.24em] text-zinc-600">{t('status.currentNotice')}</div>
                     <div className="mt-1 break-words text-sm leading-6 text-zinc-800">
                       {payload.message ?? t('status.awaiting')}
                     </div>
@@ -293,9 +293,9 @@ export default function StatusView() {
             <table className="w-full min-w-[560px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-zinc-200 bg-zinc-50/60">
-                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.parameter')}</th>
-                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.value')}</th>
-                  <th className="hud-mono px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-500">{t('status.state')}</th>
+                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-600">{t('status.parameter')}</th>
+                  <th className="hud-mono px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-600">{t('status.value')}</th>
+                  <th className="hud-mono px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-[0.24em] text-zinc-600">{t('status.state')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -306,10 +306,10 @@ export default function StatusView() {
             </table>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-zinc-200 bg-zinc-50/60 px-5 py-3 text-[11px] sm:px-6">
-            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-0.5 font-semibold uppercase tracking-[0.22em] text-zinc-500">
+            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-2.5 py-0.5 font-semibold uppercase tracking-[0.22em] text-zinc-600">
               TRACE_OK
             </span>
-            <span className="hud-mono uppercase tracking-[0.22em] text-zinc-500">{t('status.entries', { count: logRows.length, time: formatTimestamp(payload.updated_at) })}</span>
+            <span className="hud-mono uppercase tracking-[0.22em] text-zinc-600">{t('status.entries', { count: logRows.length, time: formatTimestamp(payload.updated_at) })}</span>
           </div>
         </GlassCard>
       </section>
@@ -335,7 +335,7 @@ export default function StatusView() {
             <span className="hud-mono inline-flex rounded-full border border-secondary/30 bg-secondary/10 px-3 py-1.5 uppercase tracking-[0.22em] text-secondary">
               SYS_FOOTER_LINK
             </span>
-            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-500">
+            <span className="hud-mono inline-flex rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 uppercase tracking-[0.22em] text-zinc-600">
               {t('status.uiVersion')}
             </span>
           </div>

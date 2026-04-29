@@ -74,7 +74,7 @@ export default function AccountView() {
     return (
       <GlassCard className="flex items-center gap-3 p-8 text-sm text-zinc-600">
         <span className="h-2 w-2 rounded-full bg-primary hud-pulse" />
-        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-500">Booting account feed...</span>
+        <span className="hud-mono uppercase tracking-[0.28em] text-zinc-600">Booting account feed...</span>
       </GlassCard>
     )
   }
@@ -117,14 +117,14 @@ export default function AccountView() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="glass-tile rounded-2xl p-4">
-                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.enabledNodes')}</div>
+                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-600">{t('account.enabledNodes')}</div>
                 <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-primary hud-glow-primary">{enabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-500">{t('account.routableHint')}</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-600">{t('account.routableHint')}</div>
               </div>
               <div className="glass-tile rounded-2xl p-4">
-                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-500">{t('account.disabledNodes')}</div>
+                <div className="hud-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-zinc-600">{t('account.disabledNodes')}</div>
                 <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-zinc-800">{disabledCount}</div>
-                <div className="mt-1 text-xs leading-5 text-zinc-500">{t('account.heldHint')}</div>
+                <div className="mt-1 text-xs leading-5 text-zinc-600">{t('account.heldHint')}</div>
               </div>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function AccountView() {
                   title="Previous page"
                   onClick={goToPreviousPage}
                   disabled={safePageIndex === 0}
-                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
+                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-600"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
                     <polyline points="15 18 9 12 15 6" />
@@ -204,7 +204,7 @@ export default function AccountView() {
                   title="Next page"
                   onClick={goToNextPage}
                   disabled={safePageIndex >= totalPages - 1}
-                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-500"
+                  className="hud-mono inline-flex h-8 w-8 items-center justify-center rounded-full border border-transparent text-sm text-zinc-700 transition hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-zinc-600"
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-4 w-4">
                     <polyline points="9 18 15 12 9 6" />
@@ -212,7 +212,7 @@ export default function AccountView() {
                 </button>
               </div>
 
-              <label className="hud-mono inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-zinc-500 transition hover:border-primary/40 hover:text-primary">
+              <label className="hud-mono inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-zinc-50 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-zinc-600 transition hover:border-primary/40 hover:text-primary">
                 <span>{t('account.pageSize')}</span>
                 <select
                   aria-label="Page size"
