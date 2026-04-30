@@ -34,6 +34,7 @@ def run_combined(
             settings.status_snapshot_path,
             settings.status_static_dir,
             account_details_provider=keeper.list_account_details,
+            deleted_accounts_provider=keeper.list_deleted_accounts,
         )
         server.start()
         if daemon:

@@ -4,6 +4,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .cpa_client import CPAClient
+from .deletion_log import DeletionLog
 from .logging_utils import ConsoleLogger, TokenLogger
 from .models import MaintainerStats
 from .openai_client import OpenAIClient, parse_usage_info
@@ -13,7 +14,13 @@ from .utils import format_seconds, get_expired_remaining, get_expired_remaining_
 
 
 class CPACodexKeeper:
-    def __init__(self, settings: Settings, dry_run: bool = False, snapshot_writer: SnapshotWriter | None = None):
+    def __init__(
+        self,
+        settings: Settings,
+        dry_run: bool = False,
+        snapshot_writer: SnapshotWriter | None = None,
+        deletion_log: DeletionLog | None = None,
+    ):
         self.settings = settings
         self.dry_run = dry_run
         self.logger = ConsoleLogger()
@@ -34,6 +41,7 @@ class CPACodexKeeper:
         self._account_details: dict[str, dict] = {}
         self._account_details_lock = threading.Lock()
         self.snapshot_writer = snapshot_writer or SnapshotWriter(settings.status_snapshot_path)
+        self.deletion_log = deletion_log or DeletionLog(settings.deletion_log_path)
 
     def reset_stats(self):
         with self._stats_lock:
@@ -49,6 +57,9 @@ class CPACodexKeeper:
                 self._account_details[key]
                 for key in sorted(self._account_details, key=lambda item: self._account_details[item]["name"])
             ]
+
+    def list_deleted_accounts(self, *, limit: int | None = None):
+        return self.deletion_log.list(limit=limit)
 
     def _store_account_detail(self, account_detail):
         with self._account_details_lock:
@@ -211,24 +222,43 @@ class CPACodexKeeper:
     def _has_refresh_token(self, token_detail):
         return bool((token_detail.get("refresh_token") or "").strip())
 
-    def _delete_token_with_reason(self, name, reason, logger):
+    def _delete_token_with_reason(self, name, reason, logger, token_detail=None):
         logger.log("WARN", reason, indent=1)
         if self.delete_token(name, logger=logger):
             logger.log("DELETE", "已删除", indent=1)
+            self._record_deletion(name, reason, token_detail, logger)
             self._inc_stat("dead")
             logger.blank_line()
             return "dead"
         return self._skip_token("删除失败", logger)
 
-    def _handle_invalid_token(self, name, logger):
+    def _record_deletion(self, name, reason, token_detail, logger):
+        if self.dry_run:
+            return
+        try:
+            self.deletion_log.record(name=name, reason=reason, token_detail=token_detail)
+        except Exception as exc:
+            logger.log("ERROR", f"记录删除日志失败: {exc}", indent=1)
+
+    def _handle_invalid_token(self, name, token_detail, logger):
         self._remove_account_detail(name)
-        return self._delete_token_with_reason(name, "Token 无效或 workspace 已停用，准备删除", logger)
+        return self._delete_token_with_reason(
+            name,
+            "Token 无效或 workspace 已停用，准备删除",
+            logger,
+            token_detail=token_detail,
+        )
 
     def _apply_non_refreshable_expiry_policy(self, name, token_detail, remaining_seconds, expiry_known, logger):
         if self._has_refresh_token(token_detail) or not expiry_known or remaining_seconds > 0:
             return None
         self._remove_account_detail(name)
-        return self._delete_token_with_reason(name, "Token 已过期且无 Refresh Token，准备删除", logger)
+        return self._delete_token_with_reason(
+            name,
+            "Token 已过期且无 Refresh Token，准备删除",
+            logger,
+            token_detail=token_detail,
+        )
 
     def _handle_non_200_status(self, status, resp_data, logger):
         detail = resp_data.get("brief", "") if isinstance(resp_data, dict) else str(resp_data)
@@ -250,7 +280,7 @@ class CPACodexKeeper:
         logger.log("OK", f"存活 | Plan: {plan} | {quota_info}", indent=1)
         return primary_pct, secondary_pct
 
-    def _apply_quota_policy(self, name, disabled, primary_pct, secondary_pct, logger, *, has_refresh_token=True):
+    def _apply_quota_policy(self, name, disabled, primary_pct, secondary_pct, logger, *, has_refresh_token=True, token_detail=None):
         primary_reached = primary_pct >= self.settings.quota_threshold
         secondary_present = secondary_pct is not None
         secondary_reached = secondary_present and secondary_pct >= self.settings.quota_threshold
@@ -292,6 +322,7 @@ class CPACodexKeeper:
                     name,
                     f"无 Refresh Token，且{reached_summary} >= {self.settings.quota_threshold}%，准备删除",
                     logger,
+                    token_detail=token_detail,
                 )
             logger.log(
                 "INFO",
@@ -306,6 +337,7 @@ class CPACodexKeeper:
                     name,
                     f"无 Refresh Token，且{reached_summary} >= {self.settings.quota_threshold}%，准备删除",
                     logger,
+                    token_detail=token_detail,
                 )
             logger.log(
                 "WARN",
@@ -364,7 +396,7 @@ class CPACodexKeeper:
             logger.log("INFO", "检测在线状态...", indent=1)
             status, resp_data = self.check_token_live(access_token, account_id)
             if status in (401, 402):
-                return self._handle_invalid_token(name, logger)
+                return self._handle_invalid_token(name, token_detail, logger)
             if status is None:
                 detail = resp_data.get("brief", "") if isinstance(resp_data, dict) else str(resp_data)
                 msg = "网络检测失败"
@@ -384,6 +416,7 @@ class CPACodexKeeper:
                 secondary_pct,
                 logger,
                 has_refresh_token=self._has_refresh_token(token_detail),
+                token_detail=token_detail,
             )
             if quota_result:
                 return quota_result

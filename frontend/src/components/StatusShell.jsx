@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n'
 const NAV_ITEMS = [
   { id: 'status', key: 'nav.status', to: '/', icon: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z' },
   { id: 'account', key: 'nav.account', to: '/account', icon: 'M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.86 0-7 2.24-7 5v1h14v-1c0-2.76-3.14-5-7-5z' },
+  { id: 'deleted', key: 'nav.deleted', to: '/deleted', icon: 'M9 3h6l1 2h4v2H4V5h4l1-2zm-3 6h12l-1 12H7L6 9zm3 2v8h2v-8H9zm4 0v8h2v-8h-2z' },
 ]
 
 function topNavClass({ isActive }) {

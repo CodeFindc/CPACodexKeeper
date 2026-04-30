@@ -19,10 +19,12 @@ class StatusServer:
         snapshot_path: str | Path,
         static_dir: str | Path | None = None,
         account_details_provider: Callable[[], list[dict]] | None = None,
+        deleted_accounts_provider: Callable[[], list[dict]] | None = None,
     ):
         self._store = SnapshotStore(snapshot_path)
         self._static_dir = Path(static_dir) if static_dir is not None else None
         self._account_details_provider = account_details_provider or (lambda: [])
+        self._deleted_accounts_provider = deleted_accounts_provider or (lambda: [])
         self._server = ThreadingHTTPServer((host, port), self._build_handler())
         self._thread = threading.Thread(target=self._server.serve_forever, name="status-server", daemon=True)
         self._stopped = threading.Event()
@@ -50,6 +52,7 @@ class StatusServer:
         store = self._store
         static_dir = self._static_dir
         account_details_provider = self._account_details_provider
+        deleted_accounts_provider = self._deleted_accounts_provider
 
         class StatusHandler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:
@@ -60,6 +63,14 @@ class StatusServer:
                     return
                 if self.path == "/api/accounts.json":
                     body = json.dumps({"accounts": account_details_provider()}, ensure_ascii=True, indent=2).encode("utf-8")
+                    self._write_response(200, "application/json; charset=utf-8", body)
+                    return
+                if self.path == "/api/deleted-accounts.json":
+                    body = json.dumps(
+                        {"accounts": deleted_accounts_provider()},
+                        ensure_ascii=True,
+                        indent=2,
+                    ).encode("utf-8")
                     self._write_response(200, "application/json; charset=utf-8", body)
                     return
                 if self.path == "/status":

@@ -15,6 +15,7 @@ DEFAULT_STATUS_SNAPSHOT_PATH = Path("logs/status-snapshot.json")
 DEFAULT_STATUS_HOST = "127.0.0.1"
 DEFAULT_STATUS_PORT = 8080
 DEFAULT_STATUS_STATIC_DIR = Path("frontend/dist")
+DEFAULT_DELETION_LOG_PATH = Path("logs/deleted-accounts.jsonl")
 PROJECT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
@@ -39,6 +40,7 @@ class Settings:
     status_host: str = DEFAULT_STATUS_HOST
     status_port: int = DEFAULT_STATUS_PORT
     status_static_dir: Path = DEFAULT_STATUS_STATIC_DIR
+    deletion_log_path: Path = DEFAULT_DELETION_LOG_PATH
 
 
 def _read_project_env_file(env_file: Path | None = None) -> dict[str, str]:
@@ -101,11 +103,13 @@ def load_status_settings(env_file: Path | None = None) -> Settings:
     status_snapshot_raw = (_get_config_value("CPA_STATUS_SNAPSHOT", env_values) or "").strip()
     status_host = (_get_config_value("CPA_STATUS_HOST", env_values) or DEFAULT_STATUS_HOST).strip() or DEFAULT_STATUS_HOST
     status_static_dir_raw = (_get_config_value("CPA_STATUS_STATIC_DIR", env_values) or "").strip()
+    deletion_log_raw = (_get_config_value("CPA_DELETION_LOG", env_values) or "").strip()
     return Settings(
         status_snapshot_path=Path(status_snapshot_raw) if status_snapshot_raw else DEFAULT_STATUS_SNAPSHOT_PATH,
         status_host=status_host,
         status_port=_read_int("CPA_STATUS_PORT", DEFAULT_STATUS_PORT, env_values, minimum=1),
         status_static_dir=Path(status_static_dir_raw) if status_static_dir_raw else DEFAULT_STATUS_STATIC_DIR,
+        deletion_log_path=Path(deletion_log_raw) if deletion_log_raw else DEFAULT_DELETION_LOG_PATH,
     )
 
 
@@ -116,6 +120,7 @@ def load_settings(env_file: Path | None = None) -> Settings:
     proxy = (_get_config_value("CPA_PROXY", env_values) or "").strip() or None
     status_snapshot_raw = (_get_config_value("CPA_STATUS_SNAPSHOT", env_values) or "").strip()
     status_host = (_get_config_value("CPA_STATUS_HOST", env_values) or DEFAULT_STATUS_HOST).strip() or DEFAULT_STATUS_HOST
+    deletion_log_raw = (_get_config_value("CPA_DELETION_LOG", env_values) or "").strip()
 
     if not endpoint:
         raise SettingsError("CPA_ENDPOINT is required")
@@ -139,4 +144,5 @@ def load_settings(env_file: Path | None = None) -> Settings:
         status_snapshot_path=Path(status_snapshot_raw) if status_snapshot_raw else DEFAULT_STATUS_SNAPSHOT_PATH,
         status_host=status_host,
         status_port=_read_int("CPA_STATUS_PORT", DEFAULT_STATUS_PORT, env_values, minimum=1),
+        deletion_log_path=Path(deletion_log_raw) if deletion_log_raw else DEFAULT_DELETION_LOG_PATH,
     )
