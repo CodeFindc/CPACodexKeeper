@@ -9,7 +9,10 @@ RUN npm run build
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    CPA_STATUS_HOST=0.0.0.0 \
+    CPA_STATUS_PORT=8080 \
+    CPA_STATUS_STATIC_DIR=/app/frontend/dist
 
 WORKDIR /app
 
@@ -21,4 +24,6 @@ COPY main.py pyproject.toml README.md README.en.md justfile ./
 COPY tests ./tests
 COPY --from=frontend-build /frontend/dist ./frontend/dist
 
-CMD ["python", "main.py"]
+EXPOSE 8080
+
+CMD ["python", "main.py", "combined"]
