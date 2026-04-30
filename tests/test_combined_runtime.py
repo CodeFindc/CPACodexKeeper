@@ -24,7 +24,7 @@ class RecordingServer:
     should_fail_init = False
     should_fail_start = False
 
-    def __init__(self, host, port, snapshot_path, static_dir=None, account_details_provider=None):
+    def __init__(self, host, port, snapshot_path, static_dir=None, account_details_provider=None, deleted_accounts_provider=None):
         if self.__class__.should_fail_init:
             raise RuntimeError("server init failed")
         self.host = host
@@ -32,6 +32,7 @@ class RecordingServer:
         self.snapshot_path = snapshot_path
         self.static_dir = static_dir
         self.account_details_provider = account_details_provider
+        self.deleted_accounts_provider = deleted_accounts_provider
         self.started = False
         self.closed = False
         self.close_calls = 0
@@ -61,6 +62,9 @@ class RecordingKeeper:
 
     def list_account_details(self):
         return [{"id": "acct-1", "name": "Account 1"}]
+
+    def list_deleted_accounts(self, *, limit=None):
+        return []
 
     def run(self, mode):
         self.run_modes.append(mode)
