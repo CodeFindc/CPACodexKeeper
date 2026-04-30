@@ -1,6 +1,9 @@
+import ipaddress
 import json
+import socket
 import time
 from typing import Any
+from urllib.parse import urlparse
 
 from curl_cffi import requests
 
@@ -8,11 +11,42 @@ from .models import RequestResult
 from .utils import brief_response_text
 
 
+def is_local_url(url: str) -> bool:
+    """Return True when ``url`` points at a loopback / LAN / link-local host.
+
+    Used to bypass an outbound HTTP proxy for self-hosted CPA endpoints that
+    live on the same machine or local network as the keeper.
+    """
+    try:
+        host = urlparse(url).hostname
+    except Exception:
+        return False
+    if not host:
+        return False
+    host_lower = host.lower()
+    if host_lower == "localhost" or host_lower.endswith(".localhost") or host_lower.endswith(".local"):
+        return True
+    try:
+        ip = ipaddress.ip_address(host_lower)
+    except ValueError:
+        try:
+            resolved = socket.gethostbyname(host)
+        except (socket.gaierror, OSError):
+            return False
+        try:
+            ip = ipaddress.ip_address(resolved)
+        except ValueError:
+            return False
+    return bool(ip.is_loopback or ip.is_private or ip.is_link_local)
+
+
 class CPAClient:
     def __init__(self, base_url: str, token: str, *, proxy: str | None = None, timeout: int = 30, max_retries: int = 2):
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
+        if proxy and is_local_url(self.base_url):
+            proxy = None
         self.proxies = {"http": proxy, "https": proxy} if proxy else None
         self.headers = {
             "Authorization": f"Bearer {token}",
