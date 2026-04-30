@@ -7,6 +7,7 @@ from unittest.mock import Mock, call, patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
+from src.deletion_log import DeletionLog
 from src.maintainer import CPACodexKeeper
 from src.openai_client import parse_usage_info
 from src.settings import Settings
@@ -756,3 +757,84 @@ class MaintainerTests(unittest.TestCase):
         self.maintainer.run()
 
         self.maintainer.log.assert_any_call("INFO", "线程数: 5")
+
+
+class DeletionLoggingTests(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+
+        self.settings = Settings(
+            cpa_endpoint="https://example.com",
+            cpa_token="secret",
+            quota_threshold=100,
+            expiry_threshold_days=3,
+        )
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.log_path = pathlib.Path(self.tempdir.name) / "deleted.jsonl"
+        self.deletion_log = DeletionLog(self.log_path)
+        self.maintainer = CPACodexKeeper(
+            settings=self.settings,
+            dry_run=False,
+            deletion_log=self.deletion_log,
+        )
+        self.maintainer.delete_token = Mock(return_value=True)
+
+    def tearDown(self):
+        self.tempdir.cleanup()
+
+    def _logger(self):
+        return Mock()
+
+    def test_successful_delete_appends_record(self):
+        token_detail = {
+            "email": "a@example.com",
+            "account_id": "acc-1",
+            "expired": "2099-01-01T00:00:00Z",
+            "disabled": True,
+        }
+        result = self.maintainer._delete_token_with_reason(
+            "t1",
+            "无效",
+            self._logger(),
+            token_detail=token_detail,
+        )
+
+        self.assertEqual(result, "dead")
+        records = self.deletion_log.list()
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["name"], "t1")
+        self.assertEqual(records[0]["email"], "a@example.com")
+        self.assertEqual(records[0]["account_id"], "acc-1")
+        self.assertEqual(records[0]["expires_at"], "2099-01-01T00:00:00Z")
+        self.assertTrue(records[0]["disabled"])
+        self.assertEqual(records[0]["reason"], "无效")
+
+    def test_failed_delete_does_not_append_record(self):
+        self.maintainer.delete_token = Mock(return_value=False)
+        result = self.maintainer._delete_token_with_reason("t1", "无效", self._logger(), token_detail={})
+
+        self.assertEqual(result, "skipped")
+        self.assertEqual(self.deletion_log.list(), [])
+
+    def test_dry_run_skips_persistence(self):
+        keeper = CPACodexKeeper(
+            settings=self.settings,
+            dry_run=True,
+            deletion_log=self.deletion_log,
+        )
+        result = keeper._delete_token_with_reason(
+            "t1",
+            "无效",
+            self._logger(),
+            token_detail={"email": "a@example.com"},
+        )
+        self.assertEqual(result, "dead")
+        self.assertEqual(self.deletion_log.list(), [])
+
+    def test_list_deleted_accounts_returns_log_entries(self):
+        self.deletion_log.record(name="t1", reason="r1", deleted_at="2025-01-01T00:00:00Z")
+        self.deletion_log.record(name="t2", reason="r2", deleted_at="2024-01-01T00:00:00Z")
+
+        records = self.maintainer.list_deleted_accounts()
+
+        self.assertEqual([r["name"] for r in records], ["t1", "t2"])

@@ -106,6 +106,33 @@ class StatusServerTests(unittest.TestCase):
             },
         )
 
+    def test_deleted_accounts_json_returns_provider_payload(self):
+        provider = lambda: [
+            {
+                "deleted_at": "2026-04-30T08:00:00Z",
+                "name": "t1",
+                "email": "a@example.com",
+                "account_id": "acc-1",
+                "expires_at": "2099-01-01T00:00:00Z",
+                "disabled": False,
+                "reason": "invalid",
+            }
+        ]
+        self.server = StatusServer(
+            "127.0.0.1",
+            0,
+            self.snapshot_path,
+            deleted_accounts_provider=provider,
+        )
+        self.server.start()
+
+        response = self._get("/api/deleted-accounts.json")
+        payload = json.loads(response.read().decode("utf-8"))
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.headers["Content-Type"], "application/json; charset=utf-8")
+        self.assertEqual(payload, {"accounts": provider()})
+
     def test_status_html_serves_frontend_index_from_static_dir(self):
         static_dir = pathlib.Path(self.temp_dir.name) / "frontend-dist"
         static_dir.mkdir()

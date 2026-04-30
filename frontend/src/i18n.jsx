@@ -12,6 +12,7 @@ const dict = {
 
     'nav.status': 'STATUS',
     'nav.account': 'ACCOUNT',
+    'nav.deleted': 'ARCHIVE',
 
     'common.live': 'LIVE',
     'common.notice': 'NOTICE',
@@ -81,6 +82,21 @@ const dict = {
     'card.activeWindow': 'ACTIVE WINDOW',
     'card.tokenExpiry': 'TOKEN EXPIRY',
     'card.noExpiry': 'NO EXPIRY',
+
+    'deleted.booting': 'Booting deletion archive...',
+    'deleted.channelArchive': 'CHANNEL · ARCHIVE',
+    'deleted.records': 'RECORDS · {count}',
+    'deleted.lastAt': 'LAST · {time}',
+    'deleted.subtitle': 'Persistent log of accounts removed by the keeper. Newest first.',
+    'deleted.tableTitle': 'DELETION LEDGER',
+    'deleted.empty': 'No deletion records yet.',
+    'deleted.refresh': 'Reload archive',
+    'deleted.col.deletedAt': 'DELETED AT',
+    'deleted.col.name': 'NAME',
+    'deleted.col.email': 'EMAIL',
+    'deleted.col.expiresAt': 'EXPIRED',
+    'deleted.col.disabled': 'STATE',
+    'deleted.col.reason': 'REASON',
   },
   zh: {
     'shell.linkSecure': '链路 · 安全',
@@ -90,6 +106,7 @@ const dict = {
 
     'nav.status': '状态',
     'nav.account': '账号',
+    'nav.deleted': '已删除',
 
     'common.live': '在线',
     'common.notice': '通知',
@@ -159,6 +176,21 @@ const dict = {
     'card.activeWindow': '活跃窗口',
     'card.tokenExpiry': '令牌有效期',
     'card.noExpiry': '永久有效',
+
+    'deleted.booting': '正在加载删除存档...',
+    'deleted.channelArchive': '通道 · 存档',
+    'deleted.records': '记录 · {count}',
+    'deleted.lastAt': '最近 · {time}',
+    'deleted.subtitle': '以持久化方式记录被 Keeper 删除的账号，按时间倒序排列。',
+    'deleted.tableTitle': '删除记录',
+    'deleted.empty': '暂无删除记录。',
+    'deleted.refresh': '重新加载存档',
+    'deleted.col.deletedAt': '删除时间',
+    'deleted.col.name': '名称',
+    'deleted.col.email': '邮箱',
+    'deleted.col.expiresAt': '过期时间',
+    'deleted.col.disabled': '状态',
+    'deleted.col.reason': '原因',
   },
 }
 
